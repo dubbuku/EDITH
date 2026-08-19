@@ -253,6 +253,59 @@ const loginSubmitButton =
         )
         : null;
 
+const loginLoader =
+    document.getElementById("loginLoader");
+
+function showLoginLoader() {
+
+    if (loginLoader) {
+        loginLoader.classList.remove("hidden");
+        loginLoader.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+    }
+
+    if (loginSubmitButton) {
+        loginSubmitButton.disabled = true;
+    }
+
+    if (usernameInput) {
+        usernameInput.disabled = true;
+    }
+
+    if (passwordInput) {
+        passwordInput.disabled = true;
+    }
+
+}
+
+function hideLoginLoader() {
+
+    if (loginLoader) {
+        loginLoader.classList.add("hidden");
+        loginLoader.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+    }
+
+    if (loginSubmitButton) {
+        loginSubmitButton.disabled = false;
+    }
+
+    if (usernameInput) {
+        usernameInput.disabled = false;
+    }
+
+    if (passwordInput) {
+        passwordInput.disabled = false;
+    }
+
+    updateLoginGlow();
+
+}
+
 function updateLoginGlow() {
 
     if (!loginSubmitButton) {
@@ -625,6 +678,8 @@ async function loadJobs() {
 
         renderCurrentPage();
 
+        return true;
+
     }
 
     catch (error) {
@@ -652,7 +707,7 @@ async function loadJobs() {
             loginError.textContent =
                 "Your session has expired. Please sign in again.";
 
-            return;
+            return false;
 
         }
 
@@ -689,6 +744,8 @@ async function loadJobs() {
 
             }
         );
+
+        return false;
 
     }
 
@@ -1008,6 +1065,8 @@ loginForm.addEventListener(
         loginError.textContent =
             "";
 
+        showLoginLoader();
+
         try {
 
             const auth =
@@ -1029,14 +1088,6 @@ loginForm.addEventListener(
             );
 
             updateHeaderGreeting();
-
-            loginScreen.classList.add(
-                "hidden"
-            );
-
-            dashboard.classList.remove(
-                "hidden"
-            );
 
             const savedPage =
                 sessionStorage.getItem(
@@ -1076,11 +1127,29 @@ loginForm.addEventListener(
 
             saveSession();
 
-            await loadJobs();
+            const loaded =
+                await loadJobs();
+
+            if (!loaded) {
+                hideLoginLoader();
+                return;
+            }
+
+            loginScreen.classList.add(
+                "hidden"
+            );
+
+            dashboard.classList.remove(
+                "hidden"
+            );
+
+            hideLoginLoader();
 
         }
 
         catch (error) {
+
+            hideLoginLoader();
 
             clearAuthToken();
 
@@ -1576,11 +1645,16 @@ function renderJobs() {
                 ) {
 
                     /*
-                     * Application and Result are independent filters.
-                     * A user-rejected job can still be "To Apply"
-                     * because Applied remains FALSE.
+                     * To Apply excludes application history AND
+                     * any job explicitly rejected by the user or
+                     * by the company. Rejected jobs are shown only
+                     * through the relevant Result filter.
                      */
-                    if (job.applied) {
+                    if (
+                        job.applied ||
+                        job.userRejected ||
+                        job.status === "Rejected"
+                    ) {
 
                         return false;
 
