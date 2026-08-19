@@ -126,9 +126,6 @@ const favouritesGrid =
 const todayJobCount =
     document.getElementById("todayJobCount");
 
-const currentOpportunityCount =
-    document.getElementById("currentOpportunityCount");
-
 const jobsCount =
     document.getElementById("jobsCount");
 
