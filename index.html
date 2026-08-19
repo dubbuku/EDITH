@@ -19,11 +19,9 @@
 
 </head>
 
-
 <body>
 
-<main id="app">
-
+<div id="app">
 
     <!-- =====================================================
          LOGIN
@@ -36,110 +34,49 @@
 
         <div class="login-container">
 
-
-            <div class="brand-area">
-
-                <div
-                    id="edithLogo"
-                    class="edith-logo"
-                >
-                    EDITH
-                </div>
-
-
-                <h1>
-                    Welcome
-                </h1>
-
-
-                <p>
-                    Sign in to continue
-                </p>
-
+            <div class="edith-logo">
+                EDITH
             </div>
 
+            <h1>Welcome</h1>
 
+            <p>
+                Sign in to continue
+            </p>
 
             <form id="loginForm">
 
+                <input
+                    type="text"
+                    id="username"
+                    placeholder="Username"
+                    required
+                >
 
-                <div class="input-group">
+                <input
+                    type="password"
+                    id="password"
+                    placeholder="Password"
+                    required
+                >
 
-                    <input
-                        type="text"
-                        id="username"
-                        placeholder="Username"
-                        autocomplete="username"
-                        required
-                    >
-
-                    <div class="dashed-line"></div>
-
-                </div>
-
-
-
-                <div class="input-group">
-
-                    <input
-                        type="password"
-                        id="password"
-                        placeholder="Password"
-                        autocomplete="current-password"
-                        required
-                    >
-
-                    <div class="dashed-line"></div>
-
-                </div>
-
-
-
-                <p
+                <div
                     id="loginError"
                     class="login-error"
-                ></p>
-
-
+                ></div>
 
                 <button
                     type="submit"
-                    id="loginButton"
                     class="login-button"
                 >
-
-                    <div class="dashed-line"></div>
-
-                    <span>
-                        Log in
-                    </span>
-
-                    <div class="dashed-line"></div>
-
+                    LOG IN
                 </button>
 
-
             </form>
-
-
-            <div
-                id="loginLoader"
-                class="login-loader hidden"
-                aria-hidden="true"
-            >
-                <div class="login-spinner"></div>
-            </div>
-
-
-            <div class="version">
-                Version 1.1
-            </div>
-
 
         </div>
 
     </section>
-
 
 
     <!-- =====================================================
@@ -151,18 +88,15 @@
         class="dashboard hidden"
     >
 
-
         <!-- =================================================
-             TOP BAR
+             HEADER
              ================================================= -->
 
         <header class="top-bar">
 
-
             <div class="small-edith">
                 EDITH
             </div>
-
 
             <div class="top-right">
 
@@ -170,9 +104,9 @@
                     Karthick
                 </span>
 
-
                 <button
                     id="logoutButton"
+                    type="button"
                     class="logout-button"
                 >
                     Logout
@@ -180,13 +114,11 @@
 
             </div>
 
-
         </header>
 
 
-
         <!-- =================================================
-             COMMON SEARCH
+             SEARCH
              ================================================= -->
 
         <div class="search-area">
@@ -196,7 +128,6 @@
                 <span class="search-icon">
                     ⌕
                 </span>
-
 
                 <input
                     type="text"
@@ -209,65 +140,60 @@
         </div>
 
 
-
         <!-- =================================================
              NAVIGATION
              ================================================= -->
 
         <nav class="main-navigation">
 
-
             <button
                 class="nav-button active"
                 data-page="today"
+                type="button"
             >
                 TODAY
             </button>
 
-
             <button
                 class="nav-button"
                 data-page="jobs"
+                type="button"
             >
                 JOBS
             </button>
 
-
             <button
                 class="nav-button"
                 data-page="applied"
+                type="button"
             >
                 APPLIED
             </button>
 
-
             <button
                 class="nav-button"
                 data-page="progress"
+                type="button"
             >
                 PROGRESS
             </button>
 
-
             <button
                 class="nav-button"
                 data-page="favourites"
+                type="button"
             >
                 FAVOURITES
             </button>
 
-
         </nav>
 
 
-
         <!-- =================================================
-             PAGE CONTENT
+             PAGES
              ================================================= -->
 
         <main class="page-content">
-
-
 
             <!-- =================================================
                  TODAY
@@ -278,9 +204,7 @@
                 class="page active-page"
             >
 
-
                 <div class="page-heading">
-
 
                     <div>
 
@@ -288,18 +212,15 @@
                             TODAY
                         </div>
 
-
-                        <h1>
+                        <h1 id="todayGreeting">
                             Good morning.
                         </h1>
 
-
-                        <p>
+                        <p id="todayDate">
                             Here are today's opportunities.
                         </p>
 
                     </div>
-
 
                     <div class="today-count">
 
@@ -311,19 +232,14 @@
 
                     </div>
 
-
                 </div>
-
-
 
                 <div
                     id="todayJobGrid"
                     class="job-grid"
                 ></div>
 
-
             </section>
-
 
 
             <!-- =================================================
@@ -335,9 +251,7 @@
                 class="page"
             >
 
-
                 <div class="page-heading">
-
 
                     <div>
 
@@ -345,18 +259,15 @@
                             JOBS
                         </div>
 
-
                         <h1>
                             Opportunities
                         </h1>
-
 
                         <p>
                             Find and manage your opportunities.
                         </p>
 
                     </div>
-
 
                     <div class="today-count">
 
@@ -368,9 +279,7 @@
 
                     </div>
 
-
                 </div>
-
 
 
                 <!-- APPLICATION FILTER -->
@@ -381,40 +290,38 @@
                         APPLICATION
                     </div>
 
-
                     <div class="filter-row">
 
+                        <button
+                            class="filter-button application-filter active"
+                            data-filter="All"
+                            type="button"
+                        >
+                            All
+                        </button>
 
                         <button
-                            class="
-                                filter-button
-                                application-filter
-                                active
-                            "
+                            class="filter-button application-filter"
                             data-filter="To Apply"
+                            type="button"
                         >
                             To Apply
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                application-filter
-                            "
+                            class="filter-button application-filter"
                             data-filter="Applied"
+                            type="button"
                         >
                             Applied
                         </button>
-
 
                     </div>
 
                 </div>
 
 
-
-                <!-- WORK TYPE -->
+                <!-- WORK TYPE FILTER -->
 
                 <div class="filter-section">
 
@@ -422,62 +329,46 @@
                         WORK TYPE
                     </div>
 
-
                     <div class="filter-row">
 
-
                         <button
-                            class="
-                                filter-button
-                                work-type-filter
-                                active
-                            "
+                            class="filter-button work-type-filter active"
                             data-filter="All"
+                            type="button"
                         >
                             All
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                work-type-filter
-                            "
+                            class="filter-button work-type-filter"
                             data-filter="Remote"
+                            type="button"
                         >
                             Remote
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                work-type-filter
-                            "
+                            class="filter-button work-type-filter"
                             data-filter="Hybrid"
+                            type="button"
                         >
                             Hybrid
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                work-type-filter
-                            "
+                            class="filter-button work-type-filter"
                             data-filter="On-site"
+                            type="button"
                         >
                             On-site
                         </button>
-
 
                     </div>
 
                 </div>
 
 
-
-                <!-- RESULT -->
+                <!-- RESULT FILTER -->
 
                 <div class="filter-section">
 
@@ -485,57 +376,50 @@
                         RESULT
                     </div>
 
-
                     <div class="filter-row">
 
-
                         <button
-                            class="
-                                filter-button
-                                result-filter
-                            "
+                            class="filter-button result-filter active"
                             data-filter="All"
+                            type="button"
                         >
                             All
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                result-filter
-                            "
-                            data-filter="I Rejected"
+                            class="filter-button result-filter"
+                            data-filter="Interview"
+                            type="button"
                         >
-                            I Rejected
+                            Interview
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                result-filter
-                            "
+                            class="filter-button result-filter"
                             data-filter="Rejected"
+                            type="button"
                         >
                             Rejected
                         </button>
 
+                        <button
+                            class="filter-button result-filter"
+                            data-filter="I Rejected"
+                            type="button"
+                        >
+                            I Rejected
+                        </button>
 
                     </div>
 
                 </div>
-
-
 
                 <div
                     id="jobsGrid"
                     class="job-grid"
                 ></div>
 
-
             </section>
-
 
 
             <!-- =================================================
@@ -547,9 +431,7 @@
                 class="page"
             >
 
-
                 <div class="page-heading">
-
 
                     <div>
 
@@ -557,18 +439,15 @@
                             APPLIED
                         </div>
 
-
                         <h1>
                             Your applications
                         </h1>
-
 
                         <p>
                             Keep track of every application.
                         </p>
 
                     </div>
-
 
                     <div class="today-count">
 
@@ -580,86 +459,59 @@
 
                     </div>
 
-
                 </div>
-
-
-
-                <!-- APPLICATION STATUS -->
 
                 <div class="filter-section">
 
                     <div class="filter-label">
-                        APPLICATION STATUS
+                        STATUS
                     </div>
-
 
                     <div class="filter-row">
 
-
                         <button
-                            class="
-                                filter-button
-                                applied-status-filter
-                                active
-                            "
+                            class="filter-button applied-status-filter"
                             data-filter="All"
+                            type="button"
                         >
                             All
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                applied-status-filter
-                            "
-                            data-filter="Applied"
+                            class="filter-button applied-status-filter active"
+                            data-filter="Pending"
+                            type="button"
                         >
-                            Applied
+                            Pending
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                applied-status-filter
-                            "
+                            class="filter-button applied-status-filter active"
                             data-filter="Interview"
+                            type="button"
                         >
                             Interview
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                applied-status-filter
-                            "
+                            class="filter-button applied-status-filter active"
                             data-filter="Rejected"
+                            type="button"
                         >
                             Rejected
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                applied-status-filter
-                            "
+                            class="filter-button applied-status-filter"
                             data-filter="I Rejected"
+                            type="button"
                         >
                             I Rejected
                         </button>
 
-
                     </div>
 
                 </div>
-
-
-
-                <!-- WORK TYPE -->
 
                 <div class="filter-section">
 
@@ -667,69 +519,50 @@
                         WORK TYPE
                     </div>
 
-
                     <div class="filter-row">
 
-
                         <button
-                            class="
-                                filter-button
-                                applied-work-filter
-                                active
-                            "
+                            class="filter-button applied-work-filter active"
                             data-filter="All"
+                            type="button"
                         >
                             All
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                applied-work-filter
-                            "
+                            class="filter-button applied-work-filter"
                             data-filter="Remote"
+                            type="button"
                         >
                             Remote
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                applied-work-filter
-                            "
+                            class="filter-button applied-work-filter"
                             data-filter="Hybrid"
+                            type="button"
                         >
                             Hybrid
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                applied-work-filter
-                            "
+                            class="filter-button applied-work-filter"
                             data-filter="On-site"
+                            type="button"
                         >
                             On-site
                         </button>
 
-
                     </div>
 
                 </div>
-
-
 
                 <div
                     id="appliedGrid"
                     class="job-grid"
                 ></div>
 
-
             </section>
-
 
 
             <!-- =================================================
@@ -741,9 +574,7 @@
                 class="page"
             >
 
-
                 <div class="page-heading">
-
 
                     <div>
 
@@ -751,18 +582,15 @@
                             PROGRESS
                         </div>
 
-
                         <h1>
                             Your journey
                         </h1>
-
 
                         <p>
                             Track where your applications stand.
                         </p>
 
                     </div>
-
 
                     <div class="today-count">
 
@@ -774,12 +602,7 @@
 
                     </div>
 
-
                 </div>
-
-
-
-                <!-- STATUS -->
 
                 <div class="filter-section">
 
@@ -787,73 +610,51 @@
                         STATUS
                     </div>
 
-
                     <div class="filter-row">
 
-
                         <button
-                            class="
-                                filter-button
-                                progress-status-filter
-                                active
-                            "
+                            class="filter-button progress-status-filter active"
                             data-filter="All"
+                            type="button"
                         >
                             All
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                progress-status-filter
-                            "
-                            data-filter="Applied"
+                            class="filter-button progress-status-filter"
+                            data-filter="Pending"
+                            type="button"
                         >
-                            Applied
+                            Pending
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                progress-status-filter
-                            "
+                            class="filter-button progress-status-filter"
                             data-filter="Interview"
+                            type="button"
                         >
                             Interview
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                progress-status-filter
-                            "
+                            class="filter-button progress-status-filter"
                             data-filter="Rejected"
+                            type="button"
                         >
                             Rejected
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                progress-status-filter
-                            "
+                            class="filter-button progress-status-filter"
                             data-filter="I Rejected"
+                            type="button"
                         >
                             I Rejected
                         </button>
 
-
                     </div>
 
                 </div>
-
-
-
-                <!-- WORK TYPE -->
 
                 <div class="filter-section">
 
@@ -861,71 +662,50 @@
                         WORK TYPE
                     </div>
 
-
                     <div class="filter-row">
 
-
                         <button
-                            class="
-                                filter-button
-                                progress-work-filter
-                                active
-                            "
+                            class="filter-button progress-work-filter active"
                             data-filter="All"
+                            type="button"
                         >
                             All
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                progress-work-filter
-                            "
+                            class="filter-button progress-work-filter"
                             data-filter="Remote"
+                            type="button"
                         >
                             Remote
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                progress-work-filter
-                            "
+                            class="filter-button progress-work-filter"
                             data-filter="Hybrid"
+                            type="button"
                         >
                             Hybrid
                         </button>
 
-
                         <button
-                            class="
-                                filter-button
-                                progress-work-filter
-                            "
+                            class="filter-button progress-work-filter"
                             data-filter="On-site"
+                            type="button"
                         >
                             On-site
                         </button>
 
-
                     </div>
 
                 </div>
-
-
-
-                <!-- PROGRESS GRID -->
 
                 <div
                     id="progressGrid"
                     class="job-grid"
                 ></div>
 
-
             </section>
-
 
 
             <!-- =================================================
@@ -937,9 +717,7 @@
                 class="page"
             >
 
-
                 <div class="page-heading">
-
 
                     <div>
 
@@ -947,11 +725,9 @@
                             FAVOURITES
                         </div>
 
-
                         <h1>
                             Saved opportunities
                         </h1>
-
 
                         <p>
                             Jobs you've chosen to keep close.
@@ -959,31 +735,70 @@
 
                     </div>
 
-
                 </div>
-
 
                 <div
                     id="favouritesGrid"
                     class="job-grid"
                 ></div>
 
-
             </section>
 
-
         </main>
-
 
     </section>
 
 
-</main>
+    <!-- =====================================================
+         JOB DETAILS
+         ===================================================== -->
 
+    <section
+        id="jobDetailsPage"
+        class="edith-detail-page"
+        aria-hidden="true"
+    >
 
+        <div class="edith-detail-inner">
+
+            <header class="edith-detail-header">
+
+                <button
+                    id="detailsBackButton"
+                    class="edith-detail-back"
+                    type="button"
+                >
+                    ← BACK
+                </button>
+
+                <div class="edith-detail-header-title">
+                    JOB DETAILS
+                </div>
+
+                <button
+                    id="detailsFavouriteButton"
+                    class="edith-detail-favourite"
+                    type="button"
+                >
+                    ☆
+                </button>
+
+            </header>
+
+            <div
+                id="jobDetailsContent"
+                class="edith-detail-content"
+            ></div>
+
+        </div>
+
+    </section>
+
+</div>
 
 <script src="script.js"></script>
 
 </body>
 
 </html>
+
