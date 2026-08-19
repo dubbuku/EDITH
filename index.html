@@ -74,6 +74,14 @@
 
             </form>
 
+            <div
+                id="loginLoader"
+                class="login-loader hidden"
+                aria-hidden="true"
+            >
+                <div class="login-spinner"></div>
+            </div>
+
         </div>
 
     </section>
@@ -94,15 +102,25 @@
 
         <header class="top-bar">
 
-            <div class="small-edith">
-                EDITH
+            <div class="top-left-brand">
+
+                <div class="small-edith">
+                    EDITH
+                </div>
+
+                <div class="header-greeting">
+
+                    <div class="greeting-line" id="greetingLine">
+                        Hey <span id="loggedInName">Karthick</span>
+                    </div>
+
+                    <div id="todayDate" class="header-date"></div>
+
+                </div>
+
             </div>
 
             <div class="top-right">
-
-                <span id="loggedInName">
-                    Karthick
-                </span>
 
                 <button
                     id="logoutButton"
@@ -144,50 +162,25 @@
              NAVIGATION
              ================================================= -->
 
-        <nav class="main-navigation">
-
-            <button
-                class="nav-button active"
-                data-page="today"
-                type="button"
-            >
-                TODAY
-            </button>
-
-            <button
-                class="nav-button"
-                data-page="jobs"
-                type="button"
-            >
-                JOBS
-            </button>
-
-            <button
-                class="nav-button"
-                data-page="applied"
-                type="button"
-            >
-                APPLIED
-            </button>
-
-            <button
-                class="nav-button"
-                data-page="progress"
-                type="button"
-            >
-                PROGRESS
-            </button>
-
-            <button
-                class="nav-button"
-                data-page="favourites"
-                type="button"
-            >
-                FAVOURITES
-            </button>
-
-        </nav>
-
+        <div class="main-nav-row">
+            <nav class="main-navigation">
+                <button class="nav-button active" data-page="today" type="button">TODAY</button>
+                <button class="nav-button" data-page="jobs" type="button">JOBS</button>
+                <button class="nav-button" data-page="applied" type="button">APPLIED</button>
+                <button class="nav-button" data-page="progress" type="button">PROGRESS</button>
+                <button class="nav-button" data-page="favourites" type="button">FAVOURITES</button>
+            </nav>
+            <div class="nav-opportunity-counters">
+                <div class="nav-opportunity-counter">
+                    <span id="navAppliedCount" class="nav-opportunity-number">0</span>
+                    <span class="nav-opportunity-label">Applied</span>
+                </div>
+                <div class="nav-opportunity-counter">
+                    <span id="navToApplyCount" class="nav-opportunity-number">0</span>
+                    <span class="nav-opportunity-label">To Apply</span>
+                </div>
+            </div>
+        </div>
 
         <!-- =================================================
              PAGES
@@ -212,13 +205,9 @@
                             TODAY
                         </div>
 
-                        <h1 id="todayGreeting">
-                            Good morning.
+                        <h1 id="todayOpportunityMessage">
+                            Check out today’s 0 opportunities.
                         </h1>
-
-                        <p id="todayDate">
-                            Here are today's opportunities.
-                        </p>
 
                     </div>
 
@@ -236,6 +225,43 @@
 
                 <div
                     id="todayJobGrid"
+                    class="job-grid"
+                ></div>
+
+
+                <!-- =================================================
+                     CURRENT OPPORTUNITIES
+                     Older opportunities not yet applied to
+                     ================================================= -->
+
+                <div class="today-subsection-heading">
+
+                    <div>
+
+                        <div class="eyebrow">
+                            CURRENT OPPORTUNITIES
+                        </div>
+
+                        <p>
+                            Opportunities you have not applied to yet.
+                        </p>
+
+                    </div>
+
+                    <div class="today-count today-subsection-count">
+
+                        <span id="currentOpportunityCount">
+                            0
+                        </span>
+
+                        opportunities
+
+                    </div>
+
+                </div>
+
+                <div
+                    id="currentOpportunityGrid"
                     class="job-grid"
                 ></div>
 
@@ -259,12 +285,10 @@
                             JOBS
                         </div>
 
-                        <h1>
-                            Opportunities
-                        </h1>
+                        
 
                         <p>
-                            Find and manage your opportunities.
+                            
                         </p>
 
                     </div>
@@ -297,7 +321,7 @@
                             data-filter="All"
                             type="button"
                         >
-                            ALL
+                            All
                         </button>
 
                         <button
@@ -379,7 +403,7 @@
                     <div class="filter-row">
 
                         <button
-                            class="filter-button result-filter active"
+                            class="filter-button result-filter"
                             data-filter="All"
                             type="button"
                         >
@@ -439,9 +463,7 @@
                             APPLIED
                         </div>
 
-                        <h1>
-                            Your applications
-                        </h1>
+                        
 
                         <p>
                             Keep track of every application.
@@ -470,7 +492,7 @@
                     <div class="filter-row">
 
                         <button
-                            class="filter-button applied-status-filter"
+                            class="filter-button applied-status-filter active"
                             data-filter="All"
                             type="button"
                         >
@@ -478,15 +500,15 @@
                         </button>
 
                         <button
-                            class="filter-button applied-status-filter active"
-                            data-filter="Pending"
+                            class="filter-button applied-status-filter"
+                            data-filter="Applied"
                             type="button"
                         >
-                            Pending
+                            Applied
                         </button>
 
                         <button
-                            class="filter-button applied-status-filter active"
+                            class="filter-button applied-status-filter"
                             data-filter="Interview"
                             type="button"
                         >
@@ -494,19 +516,11 @@
                         </button>
 
                         <button
-                            class="filter-button applied-status-filter active"
+                            class="filter-button applied-status-filter"
                             data-filter="Rejected"
                             type="button"
                         >
                             Rejected
-                        </button>
-
-                        <button
-                            class="filter-button applied-status-filter"
-                            data-filter="I Rejected"
-                            type="button"
-                        >
-                            I Rejected
                         </button>
 
                     </div>
@@ -582,12 +596,10 @@
                             PROGRESS
                         </div>
 
-                        <h1>
-                            Your journey
-                        </h1>
+                        
 
                         <p>
-                            Track where your applications stand.
+                            
                         </p>
 
                     </div>
@@ -622,10 +634,10 @@
 
                         <button
                             class="filter-button progress-status-filter"
-                            data-filter="Pending"
+                            data-filter="Applied"
                             type="button"
                         >
-                            Pending
+                            Applied
                         </button>
 
                         <button
