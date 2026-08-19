@@ -2,6 +2,8 @@
    EDITH — CLEAN MASTER STYLESHEET
    ========================================================= */
 
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;650;700&display=swap");
+
 :root {
     --cyan: #1ae0ff;
     --cyan-bright: #00dfff;
@@ -37,7 +39,7 @@ body {
         radial-gradient(circle at 50% 0%, rgba(0,210,255,0.025), transparent 38%),
         #000;
     color: #fff;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif;
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, Helvetica, sans-serif;
     overflow-x: hidden;
 }
 
