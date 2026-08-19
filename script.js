@@ -253,59 +253,6 @@ const loginSubmitButton =
         )
         : null;
 
-const loginLoader =
-    document.getElementById("loginLoader");
-
-function showLoginLoader() {
-
-    if (loginLoader) {
-        loginLoader.classList.remove("hidden");
-        loginLoader.setAttribute(
-            "aria-hidden",
-            "false"
-        );
-    }
-
-    if (loginSubmitButton) {
-        loginSubmitButton.disabled = true;
-    }
-
-    if (usernameInput) {
-        usernameInput.disabled = true;
-    }
-
-    if (passwordInput) {
-        passwordInput.disabled = true;
-    }
-
-}
-
-function hideLoginLoader() {
-
-    if (loginLoader) {
-        loginLoader.classList.add("hidden");
-        loginLoader.setAttribute(
-            "aria-hidden",
-            "true"
-        );
-    }
-
-    if (loginSubmitButton) {
-        loginSubmitButton.disabled = false;
-    }
-
-    if (usernameInput) {
-        usernameInput.disabled = false;
-    }
-
-    if (passwordInput) {
-        passwordInput.disabled = false;
-    }
-
-    updateLoginGlow();
-
-}
-
 function updateLoginGlow() {
 
     if (!loginSubmitButton) {
@@ -374,6 +321,135 @@ const navAppliedCount =
 
 const navToApplyCount =
     document.getElementById("navToApplyCount");
+
+/* =========================================================
+   LOGIN LOADER
+
+   Created entirely from JavaScript so the login animation does
+   not require any change to index.html or style.css.
+   ========================================================= */
+
+let loginLoader = null;
+
+function createLoginLoader() {
+
+    if (loginLoader) {
+        return loginLoader;
+    }
+
+    loginLoader = document.createElement("div");
+
+    loginLoader.id = "edithLoginLoader";
+
+    loginLoader.setAttribute("aria-hidden", "true");
+
+    loginLoader.style.cssText = `
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.96);
+    `;
+
+    const spinner = document.createElement("div");
+
+    spinner.style.cssText = `
+        position: relative;
+        width: 34px;
+        height: 34px;
+    `;
+
+    for (let i = 0; i < 12; i++) {
+
+        const dot = document.createElement("span");
+
+        const angle = i * 30;
+        const opacity = Math.max(0.15, 1 - (i * 0.07));
+
+        dot.style.cssText = `
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            border-radius: 50%;
+            background: #19dfff;
+            left: 50%;
+            top: 50%;
+            transform: rotate(${angle}deg) translateY(-13px);
+            transform-origin: 0 13px;
+            opacity: ${opacity};
+            box-shadow: 0 0 8px rgba(25, 223, 255, 0.75);
+            animation: edithLoaderPulse 1.1s linear infinite;
+            animation-delay: -${(i * 1.1 / 12).toFixed(3)}s;
+        `;
+
+        spinner.appendChild(dot);
+
+    }
+
+    loginLoader.appendChild(spinner);
+
+    const style = document.createElement("style");
+
+    style.id = "edithLoginLoaderStyle";
+
+    style.textContent = `
+        @keyframes edithLoaderPulse {
+            0%, 100% {
+                opacity: 0.18;
+            }
+            50% {
+                opacity: 1;
+            }
+        }
+    `;
+
+    document.head.appendChild(style);
+    document.body.appendChild(loginLoader);
+
+    return loginLoader;
+}
+
+function showLoginLoader() {
+
+    const loader = createLoginLoader();
+
+    loader.style.display = "flex";
+
+    if (loginSubmitButton) {
+        loginSubmitButton.disabled = true;
+    }
+
+    if (usernameInput) {
+        usernameInput.disabled = true;
+    }
+
+    if (passwordInput) {
+        passwordInput.disabled = true;
+    }
+
+}
+
+function hideLoginLoader() {
+
+    if (loginLoader) {
+        loginLoader.style.display = "none";
+    }
+
+    if (loginSubmitButton) {
+        loginSubmitButton.disabled = false;
+    }
+
+    if (usernameInput) {
+        usernameInput.disabled = false;
+    }
+
+    if (passwordInput) {
+        passwordInput.disabled = false;
+    }
+
+}
 
 /* =========================================================
    GRIDS
@@ -678,8 +754,6 @@ async function loadJobs() {
 
         renderCurrentPage();
 
-        return true;
-
     }
 
     catch (error) {
@@ -707,7 +781,7 @@ async function loadJobs() {
             loginError.textContent =
                 "Your session has expired. Please sign in again.";
 
-            return false;
+            return;
 
         }
 
@@ -744,8 +818,6 @@ async function loadJobs() {
 
             }
         );
-
-        return false;
 
     }
 
@@ -1089,51 +1161,32 @@ loginForm.addEventListener(
 
             updateHeaderGreeting();
 
-            const savedPage =
-                sessionStorage.getItem(
-                    PAGE_KEY
-                );
+            /* Always open EDITH on the TODAY page after login. */
+            currentPage = "today";
 
-            if (savedPage) {
+            navButtons.forEach(
+                function(button) {
 
-                currentPage =
-                    savedPage;
+                    button.classList.toggle(
+                        "active",
+                        button.dataset.page ===
+                        "today"
+                    );
 
-                navButtons.forEach(
-                    function(button) {
+                }
+            );
 
-                        button.classList.toggle(
-                            "active",
-                            button.dataset.page ===
-                            currentPage
-                        );
+            pages.forEach(
+                function(page) {
 
-                    }
-                );
+                    page.classList.toggle(
+                        "active-page",
+                        page.id ===
+                        "todayPage"
+                    );
 
-                pages.forEach(
-                    function(page) {
-
-                        page.classList.toggle(
-                            "active-page",
-                            page.id ===
-                            currentPage + "Page"
-                        );
-
-                    }
-                );
-
-            }
-
-            saveSession();
-
-            const loaded =
-                await loadJobs();
-
-            if (!loaded) {
-                hideLoginLoader();
-                return;
-            }
+                }
+            );
 
             loginScreen.classList.add(
                 "hidden"
@@ -1143,7 +1196,13 @@ loginForm.addEventListener(
                 "hidden"
             );
 
+            saveSession();
+
+            /* Today is now visible, so stop the login animation. */
             hideLoginLoader();
+
+            /* Load the jobs after the dashboard has opened. */
+            await loadJobs();
 
         }
 
@@ -1645,16 +1704,11 @@ function renderJobs() {
                 ) {
 
                     /*
-                     * To Apply excludes application history AND
-                     * any job explicitly rejected by the user or
-                     * by the company. Rejected jobs are shown only
-                     * through the relevant Result filter.
+                     * Application and Result are independent filters.
+                     * A user-rejected job can still be "To Apply"
+                     * because Applied remains FALSE.
                      */
-                    if (
-                        job.applied ||
-                        job.userRejected ||
-                        job.status === "Rejected"
-                    ) {
+                    if (job.applied) {
 
                         return false;
 
