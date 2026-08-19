@@ -57,6 +57,13 @@ async function authenticateUser(
         password
     );
 
+    // Identify this login as a website session.
+    // Code.gs uses this to apply the 12-hour web-session lifetime.
+    params.set(
+        "client",
+        "web"
+    );
+
     const response =
         await fetch(
             API_URL +
@@ -118,24 +125,42 @@ function updateHeaderGreeting() {
     const greetingLine =
         document.getElementById("greetingLine");
 
+    const name =
+        loggedInName
+            ? loggedInName.textContent.trim()
+            : (sessionStorage.getItem("edithUserName") || "");
+
+    const greeting =
+        name
+            ? `${getTimeGreeting()}, ${name}`
+            : getTimeGreeting();
+
     if (greetingLine) {
-
-        const name =
-            loggedInName
-                ? loggedInName.textContent.trim()
-                : "";
-
-        greetingLine.textContent =
-            name
-                ? `${getTimeGreeting()}, ${name}`
-                : getTimeGreeting();
-
+        greetingLine.textContent = greeting;
     }
 
+    /*
+     * The current index.html does not contain the older
+     * greetingLine/todayDate elements. Keep the existing layout
+     * and update the Today heading/subtitle directly instead.
+     */
+    const todayHeading = document.querySelector(
+        "#todayPage .page-heading h1"
+    );
 
-    if (todayDate) {
+    if (todayHeading) {
+        todayHeading.textContent =
+            name
+                ? `${greeting}.`
+                : `${getTimeGreeting()}.`;
+    }
 
-        todayDate.textContent =
+    const todaySubtitle = document.querySelector(
+        "#todayPage .page-heading p"
+    );
+
+    if (todaySubtitle) {
+        const formattedDate =
             new Intl.DateTimeFormat(
                 undefined,
                 {
@@ -146,6 +171,8 @@ function updateHeaderGreeting() {
                 }
             ).format(new Date());
 
+        todaySubtitle.textContent =
+            `${formattedDate} · Here are today's opportunities.`;
     }
 
 }
@@ -222,7 +249,7 @@ let selectedWorkType = ["All"];
 
 let selectedResult = [];
 
-let selectedAppliedStatus = ["All"];
+let selectedAppliedStatus = ["Pending", "Interview", "Rejected"];
 
 let selectedAppliedWork = ["All"];
 
@@ -321,135 +348,6 @@ const navAppliedCount =
 
 const navToApplyCount =
     document.getElementById("navToApplyCount");
-
-/* =========================================================
-   LOGIN LOADER
-
-   Created entirely from JavaScript so the login animation does
-   not require any change to index.html or style.css.
-   ========================================================= */
-
-let loginLoader = null;
-
-function createLoginLoader() {
-
-    if (loginLoader) {
-        return loginLoader;
-    }
-
-    loginLoader = document.createElement("div");
-
-    loginLoader.id = "edithLoginLoader";
-
-    loginLoader.setAttribute("aria-hidden", "true");
-
-    loginLoader.style.cssText = `
-        position: fixed;
-        inset: 0;
-        z-index: 99999;
-        display: none;
-        align-items: center;
-        justify-content: center;
-        background: rgba(0, 0, 0, 0.96);
-    `;
-
-    const spinner = document.createElement("div");
-
-    spinner.style.cssText = `
-        position: relative;
-        width: 34px;
-        height: 34px;
-    `;
-
-    for (let i = 0; i < 12; i++) {
-
-        const dot = document.createElement("span");
-
-        const angle = i * 30;
-        const opacity = Math.max(0.15, 1 - (i * 0.07));
-
-        dot.style.cssText = `
-            position: absolute;
-            width: 5px;
-            height: 5px;
-            border-radius: 50%;
-            background: #19dfff;
-            left: 50%;
-            top: 50%;
-            transform: rotate(${angle}deg) translateY(-13px);
-            transform-origin: 0 13px;
-            opacity: ${opacity};
-            box-shadow: 0 0 8px rgba(25, 223, 255, 0.75);
-            animation: edithLoaderPulse 1.1s linear infinite;
-            animation-delay: -${(i * 1.1 / 12).toFixed(3)}s;
-        `;
-
-        spinner.appendChild(dot);
-
-    }
-
-    loginLoader.appendChild(spinner);
-
-    const style = document.createElement("style");
-
-    style.id = "edithLoginLoaderStyle";
-
-    style.textContent = `
-        @keyframes edithLoaderPulse {
-            0%, 100% {
-                opacity: 0.18;
-            }
-            50% {
-                opacity: 1;
-            }
-        }
-    `;
-
-    document.head.appendChild(style);
-    document.body.appendChild(loginLoader);
-
-    return loginLoader;
-}
-
-function showLoginLoader() {
-
-    const loader = createLoginLoader();
-
-    loader.style.display = "flex";
-
-    if (loginSubmitButton) {
-        loginSubmitButton.disabled = true;
-    }
-
-    if (usernameInput) {
-        usernameInput.disabled = true;
-    }
-
-    if (passwordInput) {
-        passwordInput.disabled = true;
-    }
-
-}
-
-function hideLoginLoader() {
-
-    if (loginLoader) {
-        loginLoader.style.display = "none";
-    }
-
-    if (loginSubmitButton) {
-        loginSubmitButton.disabled = false;
-    }
-
-    if (usernameInput) {
-        usernameInput.disabled = false;
-    }
-
-    if (passwordInput) {
-        passwordInput.disabled = false;
-    }
-
-}
 
 /* =========================================================
    GRIDS
@@ -746,11 +644,28 @@ async function loadJobs() {
 
         }
 
+        if (!Array.isArray(data.jobs)) {
+
+            console.error(
+                "EDITH JOB RESPONSE DID NOT CONTAIN AN ARRAY:",
+                data
+            );
+
+            throw new Error(
+                "Invalid jobs response from EDITH."
+            );
+
+        }
+
         jobs =
-            (data.jobs || [])
-            .map(
+            data.jobs.map(
                 normalizeJob
             );
+
+        console.log(
+            "EDITH JOBS LOADED:",
+            jobs.length
+        );
 
         renderCurrentPage();
 
@@ -1137,8 +1052,6 @@ loginForm.addEventListener(
         loginError.textContent =
             "";
 
-        showLoginLoader();
-
         try {
 
             const auth =
@@ -1161,33 +1074,6 @@ loginForm.addEventListener(
 
             updateHeaderGreeting();
 
-            /* Always open EDITH on the TODAY page after login. */
-            currentPage = "today";
-
-            navButtons.forEach(
-                function(button) {
-
-                    button.classList.toggle(
-                        "active",
-                        button.dataset.page ===
-                        "today"
-                    );
-
-                }
-            );
-
-            pages.forEach(
-                function(page) {
-
-                    page.classList.toggle(
-                        "active-page",
-                        page.id ===
-                        "todayPage"
-                    );
-
-                }
-            );
-
             loginScreen.classList.add(
                 "hidden"
             );
@@ -1196,19 +1082,49 @@ loginForm.addEventListener(
                 "hidden"
             );
 
+            const savedPage =
+                sessionStorage.getItem(
+                    PAGE_KEY
+                );
+
+            if (savedPage) {
+
+                currentPage =
+                    savedPage;
+
+                navButtons.forEach(
+                    function(button) {
+
+                        button.classList.toggle(
+                            "active",
+                            button.dataset.page ===
+                            currentPage
+                        );
+
+                    }
+                );
+
+                pages.forEach(
+                    function(page) {
+
+                        page.classList.toggle(
+                            "active-page",
+                            page.id ===
+                            currentPage + "Page"
+                        );
+
+                    }
+                );
+
+            }
+
             saveSession();
 
-            /* Today is now visible, so stop the login animation. */
-            hideLoginLoader();
-
-            /* Load the jobs after the dashboard has opened. */
             await loadJobs();
 
         }
 
         catch (error) {
-
-            hideLoginLoader();
 
             clearAuthToken();
 
@@ -1653,8 +1569,10 @@ function renderToday() {
 
     }
 
-    currentOpportunityCount.textContent =
-        currentToApply.length;
+    if (currentOpportunityCount) {
+        currentOpportunityCount.textContent =
+            currentToApply.length;
+    }
 
     renderGrid(
         todayJobGrid,
@@ -1816,46 +1734,49 @@ function renderApplied() {
         jobs.filter(
             function(job) {
 
-                if (
-                    !job.applied ||
-                    job.userRejected
-                ) {
-
+                /* Applied page contains only actual applications. */
+                if (!job.applied) {
                     return false;
-
                 }
 
-                if (
-                    !matchesSearch(
-                        job,
-                        search
-                    )
-                ) {
-
+                if (!matchesSearch(job, search)) {
                     return false;
-
                 }
 
-                if (
-                    !selectedAppliedStatus.includes("All") &&
-                    !selectedAppliedStatus.includes(job.status)
-                ) {
-
-                    return false;
-
+                /* ALL = every applied job, including I Rejected. */
+                if (selectedAppliedStatus.includes("All")) {
+                    return matchesAppliedWork(job);
                 }
 
-                if (
-                    !selectedAppliedWork.includes("All") &&
-                    !selectedAppliedWork.includes(job.workType)
-                ) {
+                const statusMatches =
+                    selectedAppliedStatus.some(
+                        function(filter) {
 
+                            if (filter === "Pending") {
+                                return job.status === "Applied";
+                            }
+
+                            if (filter === "Interview") {
+                                return job.status === "Interview";
+                            }
+
+                            if (filter === "Rejected") {
+                                return job.status === "Rejected";
+                            }
+
+                            if (filter === "I Rejected") {
+                                return job.status === "I Rejected" || job.userRejected;
+                            }
+
+                            return false;
+                        }
+                    );
+
+                if (!statusMatches) {
                     return false;
-
                 }
 
-                return true;
-
+                return matchesAppliedWork(job);
             }
         );
 
@@ -1869,126 +1790,11 @@ function renderApplied() {
 
 }
 
-/* =========================================================
-   PROGRESS
-   ========================================================= */
+function matchesAppliedWork(job) {
 
-function renderProgress() {
-
-    const search =
-        globalSearch.value
-        .trim()
-        .toLowerCase();
-
-    const filtered =
-        jobs.filter(
-            function(job) {
-
-                if (
-                    !job.applied &&
-                    !job.userRejected
-                ) {
-
-                    return false;
-
-                }
-
-                if (
-                    !matchesSearch(
-                        job,
-                        search
-                    )
-                ) {
-
-                    return false;
-
-                }
-
-                if (
-                    !selectedProgressStatus.includes("All") &&
-                    !selectedProgressStatus.includes(job.status)
-                ) {
-
-                    return false;
-
-                }
-
-                if (
-                    !selectedProgressWork.includes("All") &&
-                    !selectedProgressWork.includes(job.workType)
-                ) {
-
-                    return false;
-
-                }
-
-                return true;
-
-            }
-        );
-
-    progressCount.textContent =
-        filtered.length;
-
-    renderGrid(
-        progressGrid,
-        filtered
-    );
-
-}
-
-/* =========================================================
-   FAVOURITES
-   ========================================================= */
-
-function renderFavourites() {
-
-    const search =
-        globalSearch.value
-        .trim()
-        .toLowerCase();
-
-    const filtered =
-        jobs.filter(
-            function(job) {
-
-                /*
-                 * I REJECTED:
-                 * remove from favourites.
-                 */
-
-                if (
-                    job.userRejected
-                ) {
-
-                    return false;
-
-                }
-
-                /*
-                 * COMPANY REJECTED:
-                 * KEEP if favourite.
-                 */
-
-                if (
-                    !job.favorite
-                ) {
-
-                    return false;
-
-                }
-
-                return matchesSearch(
-                    job,
-                    search
-                );
-
-            }
-        );
-
-    renderGrid(
-        favouritesGrid,
-        filtered
+    return (
+        selectedAppliedWork.includes("All") ||
+        selectedAppliedWork.includes(job.workType)
     );
 
 }
@@ -3535,8 +3341,31 @@ document
     );
 
 /* =========================================================
-   APPLIED STATUS — multi-select, minimum one
+   APPLIED STATUS — multi-select
+
+   ALL is available, but the default is:
+   Pending + Interview + Rejected.
    ========================================================= */
+
+/* The existing HTML has an "Applied" button in this position.
+   Re-purpose it as "Pending" without changing index.html. */
+const appliedPendingButton =
+    document.querySelector(
+        '.applied-status-filter[data-filter="Applied"]'
+    );
+
+if (appliedPendingButton) {
+
+    appliedPendingButton.dataset.filter = "Pending";
+    appliedPendingButton.textContent = "Pending";
+
+}
+
+/* Set the requested default visual state. */
+setActiveFilterValues(
+    ".applied-status-filter",
+    selectedAppliedStatus
+);
 
 document
     .querySelectorAll(
@@ -3555,9 +3384,10 @@ document
                             selectedAppliedStatus,
                             button.dataset.filter,
                             [
-                                "Applied",
+                                "Pending",
                                 "Interview",
-                                "Rejected"
+                                "Rejected",
+                                "I Rejected"
                             ],
                             false
                         );
@@ -3910,9 +3740,6 @@ setInterval(updateHeaderGreeting, 60000);
 
 
 /* Keep greeting/date current while the page remains open. */
-setInterval(
-    updateEdithGreeting,
-    60000
-);
+/* updateHeaderGreeting handles the live greeting/date refresh. */
 
 updateHeaderGreeting();
