@@ -1723,6 +1723,126 @@ function renderJobs() {
    APPLIED
    ========================================================= */
 
+function renderProgress() {
+
+    const search =
+        globalSearch.value
+        .trim()
+        .toLowerCase();
+
+    const filtered =
+        jobs.filter(
+            function(job) {
+
+                if (
+                    !job.applied &&
+                    !job.userRejected
+                ) {
+
+                    return false;
+
+                }
+
+                if (
+                    !matchesSearch(
+                        job,
+                        search
+                    )
+                ) {
+
+                    return false;
+
+                }
+
+                if (
+                    !selectedProgressStatus.includes("All") &&
+                    !selectedProgressStatus.includes(job.status)
+                ) {
+
+                    return false;
+
+                }
+
+                if (
+                    !selectedProgressWork.includes("All") &&
+                    !selectedProgressWork.includes(job.workType)
+                ) {
+
+                    return false;
+
+                }
+
+                return true;
+
+            }
+        );
+
+    progressCount.textContent =
+        filtered.length;
+
+    renderGrid(
+        progressGrid,
+        filtered
+    );
+
+}
+
+/* =========================================================
+   FAVOURITES
+   ========================================================= */
+
+function renderFavourites() {
+
+    const search =
+        globalSearch.value
+        .trim()
+        .toLowerCase();
+
+    const filtered =
+        jobs.filter(
+            function(job) {
+
+                /*
+                 * I REJECTED:
+                 * remove from favourites.
+                 */
+
+                if (
+                    job.userRejected
+                ) {
+
+                    return false;
+
+                }
+
+                /*
+                 * COMPANY REJECTED:
+                 * KEEP if favourite.
+                 */
+
+                if (
+                    !job.favorite
+                ) {
+
+                    return false;
+
+                }
+
+                return matchesSearch(
+                    job,
+                    search
+                );
+
+            }
+        );
+
+    renderGrid(
+        favouritesGrid,
+        filtered
+    );
+
+}
+
 function renderApplied() {
 
     const search =
