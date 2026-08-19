@@ -11,214 +11,16 @@ const API_URL =
     "https://script.google.com/macros/s/AKfycbz2OdRwVbESI647sS001Y5Sxr1Eto4-cEoEktxeCOeLSx9izz4ewkNDWP5N0N81XR9N/exec";
 
 /* =========================================================
-   SERVER-SIDE AUTHENTICATION
-   ========================================================= */
-
-const AUTH_TOKEN_KEY = "edithAuthToken";
-
-function getAuthToken() {
-    return sessionStorage.getItem(
-        AUTH_TOKEN_KEY
-    ) || "";
-}
-
-function saveAuthToken(token) {
-    sessionStorage.setItem(
-        AUTH_TOKEN_KEY,
-        token
-    );
-}
-
-function clearAuthToken() {
-    sessionStorage.removeItem(
-        AUTH_TOKEN_KEY
-    );
-}
-
-async function authenticateUser(
-    username,
-    password
-) {
-    const params =
-        new URLSearchParams();
-
-    params.set(
-        "action",
-        "login"
-    );
-
-    params.set(
-        "username",
-        username
-    );
-
-    params.set(
-        "password",
-        password
-    );
-
-    // Identify this login as a website session.
-    // Code.gs uses this to apply the 12-hour web-session lifetime.
-    params.set(
-        "client",
-        "web"
-    );
-
-    const response =
-        await fetch(
-            API_URL +
-            "?" +
-            params.toString(),
-            {
-                method: "GET",
-                cache: "no-store"
-            }
-        );
-
-    if (!response.ok) {
-        throw new Error(
-            "Login service unavailable."
-        );
-    }
-
-    const data =
-        await response.json();
-
-    if (!data.success) {
-        throw new Error(
-            data.error ||
-            "Incorrect username or password."
-        );
-    }
-
-    return data;
-}
-
-
-
-/* =========================================================
-   HEADER GREETING / DATE
-   ========================================================= */
-
-function getTimeGreeting() {
-
-    const hour = new Date().getHours();
-
-    if (hour >= 5 && hour < 12) {
-        return "Good morning";
-    }
-
-    if (hour >= 12 && hour < 17) {
-        return "Good afternoon";
-    }
-
-    if (hour >= 17 && hour < 22) {
-        return "Good evening";
-    }
-
-    return "Good evening";
-}
-
-
-function updateHeaderGreeting() {
-
-    const greetingLine =
-        document.getElementById("greetingLine");
-
-    const name =
-        loggedInName
-            ? loggedInName.textContent.trim()
-            : (sessionStorage.getItem("edithUserName") || "");
-
-    const greeting =
-        name
-            ? `${getTimeGreeting()}, ${name}`
-            : getTimeGreeting();
-
-    if (greetingLine) {
-        greetingLine.textContent = greeting;
-    }
-
-    /*
-     * The current index.html does not contain the older
-     * greetingLine/todayDate elements. Keep the existing layout
-     * and update the Today heading/subtitle directly instead.
-     */
-    const todayHeading = document.querySelector(
-        "#todayPage .page-heading h1"
-    );
-
-    if (todayHeading) {
-        todayHeading.textContent =
-            name
-                ? `${greeting}.`
-                : `${getTimeGreeting()}.`;
-    }
-
-    const todaySubtitle = document.querySelector(
-        "#todayPage .page-heading p"
-    );
-
-    if (todaySubtitle) {
-        const formattedDate =
-            new Intl.DateTimeFormat(
-                undefined,
-                {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric"
-                }
-            ).format(new Date());
-
-        todaySubtitle.textContent =
-            `${formattedDate} · Here are today's opportunities.`;
-    }
-
-}
-
-/* =========================================================
    LOGIN
    ========================================================= */
 
-/* =========================================================
-   SAME-TAB SESSION
+const users = {
 
-   sessionStorage survives refreshes in this tab, but is
-   intentionally NOT shared with a newly opened tab/window.
-   Closing the tab clears it, so a fresh sign-in is required.
-   ========================================================= */
+    atchaya: "kadavuchol",
 
-const SESSION_KEY = "edithSession";
-const PAGE_KEY = "edithCurrentPage";
+    karthick: "summa"
 
-function saveSession() {
-
-    sessionStorage.setItem(
-        SESSION_KEY,
-        loggedInName ? loggedInName.textContent : ""
-    );
-
-    sessionStorage.setItem(
-        PAGE_KEY,
-        currentPage
-    );
-
-}
-
-function clearSession() {
-
-    sessionStorage.removeItem(
-        SESSION_KEY
-    );
-
-    sessionStorage.removeItem(
-        PAGE_KEY
-    );
-
-    clearAuthToken();
-
-}
+};
 
 /* =========================================================
    APPLICATION STATE
@@ -229,9 +31,6 @@ let jobs = [];
 let currentPage = "today";
 
 let currentDetailsJob = null;
-
-/* Page from which the job details were opened */
-let detailsOriginPage = "today";
 
 let pendingApplicationJob = null;
 
@@ -245,17 +44,21 @@ let applicationPromptShown = false;
 
 let selectedApplication = "All";
 
-let selectedWorkType = ["All"];
+let selectedWorkType = "All";
 
-let selectedResult = [];
+let selectedResult = "All";
 
-let selectedAppliedStatus = ["Pending", "Interview", "Rejected"];
+let selectedAppliedStatus = [
+    "Pending",
+    "Interview",
+    "Rejected"
+];
 
-let selectedAppliedWork = ["All"];
+let selectedAppliedWork = "All";
 
-let selectedProgressStatus = ["All"];
+let selectedProgressStatus = "All";
 
-let selectedProgressWork = ["All"];
+let selectedProgressWork = "All";
 
 /* =========================================================
    DOM ELEMENTS
@@ -273,58 +76,6 @@ const passwordInput =
 const loginError =
     document.getElementById("loginError");
 
-const loginSubmitButton =
-    loginForm
-        ? loginForm.querySelector(
-            'button[type="submit"]'
-        )
-        : null;
-
-function updateLoginGlow() {
-
-    if (!loginSubmitButton) {
-        return;
-    }
-
-    const username =
-        usernameInput
-            ? usernameInput.value.trim()
-            : "";
-
-    const password =
-        passwordInput
-            ? passwordInput.value
-            : "";
-
-    loginSubmitButton.classList.toggle(
-        "login-active",
-        username.length > 0 ||
-        password.length > 0
-    );
-
-}
-
-if (usernameInput) {
-
-    usernameInput.addEventListener(
-        "input",
-        updateLoginGlow
-    );
-
-}
-
-if (passwordInput) {
-
-    passwordInput.addEventListener(
-        "input",
-        updateLoginGlow
-    );
-
-}
-
-updateLoginGlow();
-
-
 const loginScreen =
     document.getElementById("loginScreen");
 
@@ -334,6 +85,9 @@ const dashboard =
 const loggedInName =
     document.getElementById("loggedInName");
 
+const todayGreeting =
+    document.getElementById("todayGreeting");
+
 const todayDate =
     document.getElementById("todayDate");
 
@@ -342,12 +96,6 @@ const logoutButton =
 
 const globalSearch =
     document.getElementById("globalSearch");
-
-const navAppliedCount =
-    document.getElementById("navAppliedCount");
-
-const navToApplyCount =
-    document.getElementById("navToApplyCount");
 
 /* =========================================================
    GRIDS
@@ -513,12 +261,30 @@ function normalizeJob(raw) {
     }
 
     /*
-     * NORMAL APPLIED
+     * PENDING / NORMAL APPLIED
+     *
+     * Code.gs sets Result to "Pending" when an
+     * application is first recorded. Older rows may
+     * still have a blank Result, so both are treated
+     * as Pending in the website.
+     */
+
+    else if (
+        result.toLowerCase() === "" ||
+        result.toLowerCase() === "pending"
+    ) {
+
+        status = "Pending";
+
+    }
+
+    /*
+     * FALLBACK
      */
 
     else {
 
-        status = "Applied";
+        status = result || "Pending";
 
     }
 
@@ -593,30 +359,28 @@ function normalizeJob(raw) {
 
 async function loadJobs() {
 
-    try {
-
-        const token =
-            getAuthToken();
-
-        if (!token) {
-            throw new Error(
-                "AUTH_REQUIRED"
-            );
-        }
-
-        const params =
-            new URLSearchParams();
-
-        params.set(
-            "token",
-            token
+    const token =
+        sessionStorage.getItem(
+            "edithWebToken"
         );
+
+    if (!token) {
+
+        showLoginState(
+            "Your website session has ended. Please log in again."
+        );
+
+        return;
+
+    }
+
+    try {
 
         const response =
             await fetch(
                 API_URL +
-                "?" +
-                params.toString(),
+                "?token=" +
+                encodeURIComponent(token),
                 {
                     method: "GET",
                     cache: "no-store"
@@ -637,6 +401,27 @@ async function loadJobs() {
 
         if (!data.success) {
 
+            if (
+                data.error ===
+                "AUTH_REQUIRED"
+            ) {
+
+                sessionStorage.removeItem(
+                    "edithWebToken"
+                );
+
+                sessionStorage.removeItem(
+                    "edithDisplayName"
+                );
+
+                showLoginState(
+                    "Your website session has expired. Please log in again."
+                );
+
+                return;
+
+            }
+
             throw new Error(
                 data.error ||
                 "Unable to load jobs."
@@ -645,11 +430,6 @@ async function loadJobs() {
         }
 
         if (!Array.isArray(data.jobs)) {
-
-            console.error(
-                "EDITH JOB RESPONSE DID NOT CONTAIN AN ARRAY:",
-                data
-            );
 
             throw new Error(
                 "Invalid jobs response from EDITH."
@@ -662,10 +442,7 @@ async function loadJobs() {
                 normalizeJob
             );
 
-        console.log(
-            "EDITH JOBS LOADED:",
-            jobs.length
-        );
+        renderTodayHeader();
 
         renderCurrentPage();
 
@@ -678,27 +455,10 @@ async function loadJobs() {
             error
         );
 
-        if (
-            error.message ===
-            "AUTH_REQUIRED"
-        ) {
-
-            clearSession();
-
-            dashboard.classList.add(
-                "hidden"
-            );
-
-            loginScreen.classList.remove(
-                "hidden"
-            );
-
-            loginError.textContent =
-                "Your session has expired. Please sign in again.";
-
-            return;
-
-        }
+        /*
+         * Do not call this a connection error when
+         * the backend explicitly reports AUTH_REQUIRED.
+         */
 
         [
             todayJobGrid,
@@ -747,186 +507,55 @@ async function updateJob(
     updates
 ) {
 
-    const job =
-        jobs.find(
-            function(item) {
+    try {
 
-                return item.id === jobId;
+        const params =
+            new URLSearchParams();
+
+        params.set(
+            "action",
+            "update"
+        );
+
+        params.set(
+            "jobId",
+            jobId
+        );
+
+        Object.keys(
+            updates
+        ).forEach(
+            function(key) {
+
+                params.set(
+                    key,
+                    String(
+                        updates[key]
+                    )
+                );
 
             }
         );
 
-    if (!job) {
-
-        return false;
-
-    }
-
-    /*
-     * Optimistic update:
-     * change EDITH immediately instead of waiting for
-     * Google Sheets and then downloading every job again.
-     */
-
-    const previous = {
-
-        applied: job.applied,
-        appliedDate: job.appliedDate,
-        result: job.result,
-        favorite: job.favorite,
-        userRejected: job.userRejected,
-        status: job.status
-
-    };
-
-    if (updates.applied !== undefined) {
-
-        job.showApplicationPrompt = false;
-
-        if (
-            pendingApplicationJob &&
-            pendingApplicationJob.id === job.id
-        ) {
-            pendingApplicationJob = null;
-            applicationWaitingForReturn = false;
-            applicationPromptShown = false;
-        }
-
-        job.applied =
-            toBoolean(updates.applied);
-
-        if (job.applied) {
-
-            if (!job.appliedDate) {
-
-                job.appliedDate =
-                    new Date()
-                    .toISOString()
-                    .slice(0, 10);
-
-            }
-
-            if (!job.result) {
-
-                job.result = "Pending";
-
-            }
-
-        }
-        else {
-
-            job.appliedDate = "";
-
-        }
-
-    }
-
-    if (updates.favourite !== undefined) {
-
-        job.favorite =
-            toBoolean(updates.favourite);
-
-    }
-
-    if (updates.userRejected !== undefined) {
-
-        job.userRejected =
-            toBoolean(updates.userRejected);
-
-        if (job.userRejected) {
-
-            job.favorite = false;
-
-        }
-
-    }
-
-    /* Recalculate the displayed status locally. */
-
-    if (job.userRejected) {
-
-        job.status = "I Rejected";
-
-    }
-    else if (!job.applied) {
-
-        job.status = "To Apply";
-
-    }
-    else if (
-        String(job.result || "")
-        .trim()
-        .toLowerCase() === "interview"
-    ) {
-
-        job.status = "Interview";
-
-    }
-    else if (
-        String(job.result || "")
-        .trim()
-        .toLowerCase() === "rejected"
-    ) {
-
-        job.status = "Rejected";
-
-    }
-    else {
-
-        job.status = "Applied";
-
-    }
-
-    /* Keep the open details object pointing at the same job. */
-
-    if (currentDetailsJob && currentDetailsJob.id === job.id) {
-
-        currentDetailsJob = job;
-
-        renderJobDetails(job);
-
-    }
-    else {
-
-        renderCurrentPage();
-
-    }
-
-    /*
-     * Save to Google Sheets in the background.
-     * The UI does not wait for this request.
-     */
-
-    const params =
-        new URLSearchParams();
-
-    params.set(
-        "action",
-        "update"
-    );
-
-    params.set(
-        "jobId",
-        jobId
-    );
-
-    params.set(
-        "token",
-        getAuthToken()
-    );
-
-    Object.keys(updates).forEach(
-        function(key) {
-
-            params.set(
-                key,
-                String(updates[key])
+        const token =
+            sessionStorage.getItem(
+                "edithWebToken"
             );
 
-        }
-    );
+        if (!token) {
 
-    try {
+            showLoginState(
+                "Your website session has ended. Please log in again."
+            );
+
+            return false;
+
+        }
+
+        params.set(
+            "token",
+            token
+        );
 
         const response =
             await fetch(
@@ -959,9 +588,43 @@ async function updateJob(
 
         }
 
+        await loadJobs();
+
+        /*
+         * Refresh details page if it is open.
+         */
+
+        if (currentDetailsJob) {
+
+            const updated =
+                jobs.find(
+                    function(item) {
+
+                        return (
+                            item.id ===
+                            currentDetailsJob.id
+                        );
+
+                    }
+                );
+
+            if (updated) {
+
+                currentDetailsJob =
+                    updated;
+
+                renderJobDetails(
+                    updated
+                );
+
+            }
+
+        }
+
         return true;
 
     }
+
     catch (error) {
 
         console.error(
@@ -969,60 +632,8 @@ async function updateJob(
             error
         );
 
-        /* Revert only if this job still exists. */
-
-        const currentJob =
-            jobs.find(
-                function(item) {
-
-                    return item.id === jobId;
-
-                }
-            );
-
-        if (currentJob) {
-
-            currentJob.applied =
-                previous.applied;
-
-            currentJob.appliedDate =
-                previous.appliedDate;
-
-            currentJob.result =
-                previous.result;
-
-            currentJob.favorite =
-                previous.favorite;
-
-            currentJob.userRejected =
-                previous.userRejected;
-
-            currentJob.status =
-                previous.status;
-
-        }
-
-        if (currentDetailsJob && currentDetailsJob.id === jobId) {
-
-            currentDetailsJob = currentJob || null;
-
-            if (currentDetailsJob) {
-
-                renderJobDetails(
-                    currentDetailsJob
-                );
-
-            }
-
-        }
-        else {
-
-            renderCurrentPage();
-
-        }
-
         alert(
-            "EDITH could not save this change. Your change has been reverted."
+            "EDITH could not save this change."
         );
 
         return false;
@@ -1052,122 +663,42 @@ loginForm.addEventListener(
         loginError.textContent =
             "";
 
+        if (!username || !password) {
+            loginError.textContent =
+                "Please enter your username and password.";
+            return;
+        }
+
+        setLoginLoading(
+            true
+        );
+
         try {
 
-            const auth =
-                await authenticateUser(
-                    username,
-                    password
-                );
+            const params =
+                new URLSearchParams();
 
-            saveAuthToken(
-                auth.token
+            params.set(
+                "action",
+                "login"
             );
 
-            loggedInName.textContent =
-                auth.displayName;
-
-            sessionStorage.setItem(
-                "edithUserName",
-                auth.displayName
+            params.set(
+                "username",
+                username
             );
 
-            updateHeaderGreeting();
-
-            loginScreen.classList.add(
-                "hidden"
+            params.set(
+                "password",
+                password
             );
 
-            dashboard.classList.remove(
-                "hidden"
+            params.set(
+                "client",
+                "web"
             );
 
-            const savedPage =
-                sessionStorage.getItem(
-                    PAGE_KEY
-                );
-
-            if (savedPage) {
-
-                currentPage =
-                    savedPage;
-
-                navButtons.forEach(
-                    function(button) {
-
-                        button.classList.toggle(
-                            "active",
-                            button.dataset.page ===
-                            currentPage
-                        );
-
-                    }
-                );
-
-                pages.forEach(
-                    function(page) {
-
-                        page.classList.toggle(
-                            "active-page",
-                            page.id ===
-                            currentPage + "Page"
-                        );
-
-                    }
-                );
-
-            }
-
-            saveSession();
-
-            await loadJobs();
-
-        }
-
-        catch (error) {
-
-            clearAuthToken();
-
-            loginError.textContent =
-                error.message ===
-                "AUTH_REQUIRED"
-                    ? "Login required."
-                    : error.message ||
-                      "Incorrect username or password.";
-
-        }
-
-    }
-);
-
-/* =========================================================
-   LOGOUT
-   ========================================================= */
-
-logoutButton.addEventListener(
-    "click",
-    async function() {
-
-        const token =
-            getAuthToken();
-
-        if (token) {
-
-            try {
-
-                const params =
-                    new URLSearchParams();
-
-                params.set(
-                    "action",
-                    "logout"
-                );
-
-                params.set(
-                    "token",
-                    token
-                );
-
+            const response =
                 await fetch(
                     API_URL +
                     "?" +
@@ -1178,11 +709,233 @@ logoutButton.addEventListener(
                     }
                 );
 
+            if (!response.ok) {
+
+                throw new Error(
+                    "HTTP " +
+                    response.status
+                );
+
             }
+
+            const data =
+                await response.json();
+
+            if (!data.success) {
+
+                throw new Error(
+                    data.error ||
+                    "Incorrect username or password."
+                );
+
+            }
+
+            /*
+             * sessionStorage is intentionally used for Web.
+             * Each browser tab gets its own token.
+             * A new tab/login therefore gets a separate
+             * Web token and cannot overwrite another tab's
+             * session.
+             */
+
+            sessionStorage.setItem(
+                "edithWebToken",
+                data.token
+            );
+
+            sessionStorage.setItem(
+                "edithDisplayName",
+                data.displayName ||
+                username
+            );
+
+            loggedInName.textContent =
+                data.displayName ||
+                username;
+
+            loginScreen.classList.add(
+                "hidden"
+            );
+
+            dashboard.classList.remove(
+                "hidden"
+            );
+
+            await loadJobs();
+
+        }
+
+        catch (error) {
+
+            console.error(
+                "LOGIN ERROR:",
+                error
+            );
+
+            loginError.textContent =
+                error.message ||
+                "Unable to connect to EDITH.";
+
+            setLoginLoading(
+                false
+            );
+
+        }
+
+    }
+);
+
+function setLoginLoading(
+    loading
+) {
+
+    const button =
+        loginForm.querySelector(
+            ".login-button"
+        );
+
+    if (!button) {
+        return;
+    }
+
+    button.disabled =
+        loading;
+
+    if (loading) {
+
+        button.innerHTML = `
+            <span class="login-spinner"></span>
+        `;
+
+    }
+
+    else {
+
+        button.textContent =
+            "LOG IN";
+
+    }
+
+}
+
+function showLoginState(
+    message
+) {
+
+    dashboard.classList.add(
+        "hidden"
+    );
+
+    loginScreen.classList.remove(
+        "hidden"
+    );
+
+    loginError.textContent =
+        message || "";
+
+    setLoginLoading(
+        false
+    );
+
+    usernameInput.focus();
+
+}
+
+function renderTodayHeader() {
+
+    const displayName =
+        sessionStorage.getItem(
+            "edithDisplayName"
+        ) ||
+        loggedInName.textContent ||
+        "there";
+
+    const now =
+        new Date();
+
+    const hour =
+        now.getHours();
+
+    let greeting =
+        "Good evening";
+
+    if (hour < 12) {
+        greeting =
+            "Good morning";
+    }
+    else if (hour < 18) {
+        greeting =
+            "Good afternoon";
+    }
+
+    if (todayGreeting) {
+
+        todayGreeting.textContent =
+            greeting +
+            ", " +
+            displayName +
+            ".";
+
+    }
+
+    if (todayDate) {
+
+        todayDate.textContent =
+            now.toLocaleDateString(
+                undefined,
+                {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                    year: "numeric"
+                }
+            );
+
+    }
+
+}
+
+/* =========================================================
+   LOGOUT
+   ========================================================= */
+
+logoutButton.addEventListener(
+    "click",
+    async function() {
+
+        const token =
+            sessionStorage.getItem(
+                "edithWebToken"
+            );
+
+        /*
+         * Ask Code.gs to invalidate this Web token.
+         * iOS tokens are independent, so this cannot
+         * invalidate an iOS session.
+         */
+
+        if (token) {
+
+            try {
+
+                await fetch(
+                    API_URL +
+                    "?action=logout&token=" +
+                    encodeURIComponent(
+                        token
+                    ),
+                    {
+                        method: "GET",
+                        cache: "no-store"
+                    }
+                );
+
+            }
+
             catch (error) {
 
                 console.warn(
-                    "Logout request failed.",
+                    "EDITH logout request failed:",
                     error
                 );
 
@@ -1190,12 +943,22 @@ logoutButton.addEventListener(
 
         }
 
+        sessionStorage.removeItem(
+            "edithWebToken"
+        );
+
+        sessionStorage.removeItem(
+            "edithDisplayName"
+        );
+
         closeJobDetails();
 
         jobs.forEach(
             function(job) {
+
                 job.showApplicationPrompt =
                     false;
+
             }
         );
 
@@ -1208,8 +971,6 @@ logoutButton.addEventListener(
         applicationPromptShown =
             false;
 
-        clearSession();
-
         dashboard.classList.add(
             "hidden"
         );
@@ -1218,12 +979,22 @@ logoutButton.addEventListener(
             "hidden"
         );
 
-        usernameInput.value = "";
+        usernameInput.value =
+            "";
 
-        passwordInput.value = "";
+        passwordInput.value =
+            "";
+
+        loginError.textContent =
+            "";
+
+        setLoginLoading(
+            false
+        );
 
     }
 );
+
 
 /* =========================================================
    NAVIGATION
@@ -1238,8 +1009,6 @@ navButtons.forEach(
 
                 currentPage =
                     button.dataset.page;
-
-                saveSession();
 
                 navButtons.forEach(
                     function(item) {
@@ -1335,9 +1104,6 @@ function matchesSearch(
 
 function renderCurrentPage() {
 
-    updateNavOpportunityCounters();
-
-
     renderToday();
 
     renderJobs();
@@ -1349,8 +1115,6 @@ function renderCurrentPage() {
     renderFavourites();
 
 }
-
-
 
 /* =========================================================
    TODAY
@@ -1470,43 +1234,6 @@ function sortNewestFirst(list) {
    the same job never appears twice on the page.
    ========================================================= */
 
-/* =========================================================
-   GLOBAL OPPORTUNITY COUNTERS
-   ========================================================= */
-
-function updateNavOpportunityCounters() {
-
-    const appliedCount =
-        jobs.filter(
-            function(job) {
-                return job.applied === true;
-            }
-        ).length;
-
-    const toApplyCount =
-        jobs.filter(
-            function(job) {
-                return (
-                    !job.applied &&
-                    !job.userRejected &&
-                    job.status !== "Rejected"
-                );
-            }
-        ).length;
-
-    if (navAppliedCount) {
-        navAppliedCount.textContent =
-            appliedCount;
-    }
-
-    if (navToApplyCount) {
-        navToApplyCount.textContent =
-            toApplyCount;
-    }
-
-}
-
-
 function renderToday() {
 
     const search =
@@ -1554,24 +1281,11 @@ function renderToday() {
             )
         );
 
-    todayJobCount.textContent =
-        addedToday.length;
+    if (todayJobCount) {
 
-    const todayOpportunityMessage =
-        document.getElementById(
-            "todayOpportunityMessage"
-        );
+        todayJobCount.textContent =
+            addedToday.length;
 
-    if (todayOpportunityMessage) {
-
-        todayOpportunityMessage.textContent =
-            `Check out today’s ${addedToday.length} opportunities.`;
-
-    }
-
-    if (currentOpportunityCount) {
-        currentOpportunityCount.textContent =
-            currentToApply.length;
     }
 
     renderGrid(
@@ -1579,10 +1293,21 @@ function renderToday() {
         addedToday
     );
 
-    renderGrid(
-        currentOpportunityGrid,
-        currentToApply
-    );
+    /*
+     * The current website layout does not contain a
+     * second "current opportunity" section. Keep this
+     * rendering defensive so a missing optional element
+     * can never crash the Today page.
+     */
+
+    if (currentOpportunityGrid) {
+
+        renderGrid(
+            currentOpportunityGrid,
+            currentToApply
+        );
+
+    }
 
 }
 
@@ -1621,12 +1346,10 @@ function renderJobs() {
                     "To Apply"
                 ) {
 
-                    /*
-                     * Application and Result are independent filters.
-                     * A user-rejected job can still be "To Apply"
-                     * because Applied remains FALSE.
-                     */
-                    if (job.applied) {
+                    if (
+                        job.applied ||
+                        job.userRejected
+                    ) {
 
                         return false;
 
@@ -1639,10 +1362,10 @@ function renderJobs() {
                     "Applied"
                 ) {
 
-                    /*
-                     * Application filter is independent of Result.
-                     */
-                    if (!job.applied) {
+                    if (
+                        !job.applied ||
+                        job.userRejected
+                    ) {
 
                         return false;
 
@@ -1651,55 +1374,64 @@ function renderJobs() {
                 }
 
                 /*
-                 * WORK TYPE — multi-select.
-                 * ALL is visually selected when every work type
-                 * is functionally included.
+                 * WORK TYPE
                  */
 
                 if (
-                    !selectedWorkType.includes("All") &&
-                    !selectedWorkType.includes(job.workType)
+                    selectedWorkType !==
+                    "All"
                 ) {
 
-                    return false;
+                    if (
+                        job.workType !==
+                        selectedWorkType
+                    ) {
+
+                        return false;
+
+                    }
 
                 }
 
                 /*
-                 * RESULT — multi-select.
-                 * Result has no active filter by default.
-                 * It may also have no selections at any time,
-                 * meaning no result filtering.
+                 * RESULT
                  */
 
                 if (
-                    !selectedResult.includes("All") &&
-                    selectedResult.length > 0
+                    selectedResult !==
+                    "All"
                 ) {
 
-                    const resultMatches =
-                        selectedResult.some(
-                            function(filter) {
+                    if (
+                        selectedResult ===
+                        "Interview" &&
+                        job.status !==
+                        "Interview"
+                    ) {
 
-                                if (filter === "Interview") {
-                                    return job.status === "Interview";
-                                }
-
-                                if (filter === "Rejected") {
-                                    return job.status === "Rejected";
-                                }
-
-                                if (filter === "I Rejected") {
-                                    return job.userRejected;
-                                }
-
-                                return false;
-
-                            }
-                        );
-
-                    if (!resultMatches) {
                         return false;
+
+                    }
+
+                    if (
+                        selectedResult ===
+                        "Rejected" &&
+                        job.status !==
+                        "Rejected"
+                    ) {
+
+                        return false;
+
+                    }
+
+                    if (
+                        selectedResult ===
+                        "I Rejected" &&
+                        !job.userRejected
+                    ) {
+
+                        return false;
+
                     }
 
                 }
@@ -1723,6 +1455,123 @@ function renderJobs() {
    APPLIED
    ========================================================= */
 
+function renderApplied() {
+
+    const search =
+        globalSearch.value
+        .trim()
+        .toLowerCase();
+
+    const showAll =
+        selectedAppliedStatus.includes(
+            "All"
+        );
+
+    const filtered =
+        jobs.filter(
+            function(job) {
+
+                /*
+                 * Applied page only contains jobs that
+                 * have actually been applied for.
+                 *
+                 * I Rejected remains eligible when it is
+                 * also an applied job.
+                 */
+
+                if (!job.applied) {
+
+                    return false;
+
+                }
+
+                if (
+                    !matchesSearch(
+                        job,
+                        search
+                    )
+                ) {
+
+                    return false;
+
+                }
+
+                /*
+                 * ALL = every applied job, including
+                 * jobs personally rejected by the user.
+                 */
+
+                if (showAll) {
+
+                    if (
+                        selectedAppliedWork !==
+                        "All"
+                    ) {
+
+                        return (
+                            job.workType ===
+                            selectedAppliedWork
+                        );
+
+                    }
+
+                    return true;
+
+                }
+
+                /*
+                 * Multiple status selection.
+                 */
+
+                if (
+                    !selectedAppliedStatus.includes(
+                        job.status
+                    )
+                ) {
+
+                    return false;
+
+                }
+
+                if (
+                    selectedAppliedWork !==
+                    "All"
+                ) {
+
+                    if (
+                        job.workType !==
+                        selectedAppliedWork
+                    ) {
+
+                        return false;
+
+                    }
+
+                }
+
+                return true;
+
+            }
+        );
+
+    if (appliedCount) {
+
+        appliedCount.textContent =
+            filtered.length;
+
+    }
+
+    renderGrid(
+        appliedGrid,
+        filtered
+    );
+
+}
+
+/* =========================================================
+   PROGRESS
+   ========================================================= */
+
 function renderProgress() {
 
     const search =
@@ -1734,10 +1583,13 @@ function renderProgress() {
         jobs.filter(
             function(job) {
 
-                if (
-                    !job.applied &&
-                    !job.userRejected
-                ) {
+                /*
+                 * Progress is for actual applications.
+                 * I Rejected is kept as a separate state
+                 * when selected.
+                 */
+
+                if (!job.applied) {
 
                     return false;
 
@@ -1755,20 +1607,34 @@ function renderProgress() {
                 }
 
                 if (
-                    !selectedProgressStatus.includes("All") &&
-                    !selectedProgressStatus.includes(job.status)
+                    selectedProgressStatus !==
+                    "All"
                 ) {
 
-                    return false;
+                    if (
+                        job.status !==
+                        selectedProgressStatus
+                    ) {
+
+                        return false;
+
+                    }
 
                 }
 
                 if (
-                    !selectedProgressWork.includes("All") &&
-                    !selectedProgressWork.includes(job.workType)
+                    selectedProgressWork !==
+                    "All"
                 ) {
 
-                    return false;
+                    if (
+                        job.workType !==
+                        selectedProgressWork
+                    ) {
+
+                        return false;
+
+                    }
 
                 }
 
@@ -1777,8 +1643,12 @@ function renderProgress() {
             }
         );
 
-    progressCount.textContent =
-        filtered.length;
+    if (progressCount) {
+
+        progressCount.textContent =
+            filtered.length;
+
+    }
 
     renderGrid(
         progressGrid,
@@ -1839,82 +1709,6 @@ function renderFavourites() {
     renderGrid(
         favouritesGrid,
         filtered
-    );
-
-}
-
-function renderApplied() {
-
-    const search =
-        globalSearch.value
-        .trim()
-        .toLowerCase();
-
-    const filtered =
-        jobs.filter(
-            function(job) {
-
-                /* Applied page contains only actual applications. */
-                if (!job.applied) {
-                    return false;
-                }
-
-                if (!matchesSearch(job, search)) {
-                    return false;
-                }
-
-                /* ALL = every applied job, including I Rejected. */
-                if (selectedAppliedStatus.includes("All")) {
-                    return matchesAppliedWork(job);
-                }
-
-                const statusMatches =
-                    selectedAppliedStatus.some(
-                        function(filter) {
-
-                            if (filter === "Pending") {
-                                return job.status === "Applied";
-                            }
-
-                            if (filter === "Interview") {
-                                return job.status === "Interview";
-                            }
-
-                            if (filter === "Rejected") {
-                                return job.status === "Rejected";
-                            }
-
-                            if (filter === "I Rejected") {
-                                return job.status === "I Rejected" || job.userRejected;
-                            }
-
-                            return false;
-                        }
-                    );
-
-                if (!statusMatches) {
-                    return false;
-                }
-
-                return matchesAppliedWork(job);
-            }
-        );
-
-    appliedCount.textContent =
-        filtered.length;
-
-    renderGrid(
-        appliedGrid,
-        filtered
-    );
-
-}
-
-function matchesAppliedWork(job) {
-
-    return (
-        selectedAppliedWork.includes("All") ||
-        selectedAppliedWork.includes(job.workType)
     );
 
 }
@@ -2558,9 +2352,6 @@ function createJobCard(
 
                     if (success) {
 
-                        job.showApplicationPrompt =
-                            false;
-
                         pendingApplicationJob =
                             null;
 
@@ -2569,8 +2360,6 @@ function createJobCard(
 
                         applicationPromptShown =
                             false;
-
-                        renderCurrentPage();
 
                     }
 
@@ -2670,9 +2459,6 @@ function openJobDetails(
     job
 ) {
 
-    /* Remember exactly where this card was opened from. */
-    detailsOriginPage = currentPage;
-
     currentDetailsJob =
         job;
 
@@ -2696,39 +2482,8 @@ function openJobDetails(
 }
 
 /* =========================================================
-   CLOSE DETAILS + RETURN TO ORIGIN PAGE
+   CLOSE DETAILS
    ========================================================= */
-
-function returnToDetailsOriginPage() {
-
-    currentPage = detailsOriginPage || "today";
-
-    saveSession();
-
-    navButtons.forEach(
-        function(button) {
-
-            button.classList.toggle(
-                "active",
-                button.dataset.page === currentPage
-            );
-
-        }
-    );
-
-    pages.forEach(
-        function(page) {
-
-            page.classList.toggle(
-                "active-page",
-                page.id === currentPage + "Page"
-            );
-
-        }
-    );
-
-    renderCurrentPage();
-}
 
 function closeJobDetails() {
 
@@ -3050,11 +2805,7 @@ function renderJobDetails(
                  * Favourite.
                  */
 
-                /*
-                 * Update the UI immediately. Google Sheets is
-                 * updated in the background.
-                 */
-                updateJob(
+                await updateJob(
                     job.id,
                     {
                         userRejected: true
@@ -3062,7 +2813,6 @@ function renderJobDetails(
                 );
 
                 closeJobDetails();
-                returnToDetailsOriginPage();
 
             }
         );
@@ -3169,19 +2919,6 @@ function handleApplicationReturn() {
 
     }
 
-    if (job.applied) {
-
-        job.showApplicationPrompt = false;
-        pendingApplicationJob = null;
-        applicationWaitingForReturn = false;
-        applicationPromptShown = false;
-
-        renderCurrentPage();
-
-        return;
-
-    }
-
     applicationPromptShown =
         true;
 
@@ -3273,7 +3010,7 @@ window.addEventListener(
    FILTER EVENTS
    ========================================================= */
 
-/* APPLICATION — mutually exclusive; exactly one is always ON. */
+/* APPLICATION */
 
 document
     .querySelectorAll(
@@ -3302,95 +3039,7 @@ document
         }
     );
 
-/* =========================================================
-   MULTI-SELECT FILTER HELPER
-   ========================================================= */
-
-function updateMultiFilter(
-    selector,
-    currentSelection,
-    clickedValue,
-    allValues,
-    allowNone
-) {
-
-    let selection =
-        Array.isArray(currentSelection)
-            ? [...currentSelection]
-            : ["All"];
-
-    /* ALL means everything and is visually exclusive. */
-    if (clickedValue === "All") {
-
-        selection = ["All"];
-
-    }
-
-    else {
-
-        /* First individual selection turns ALL off. */
-        selection = selection.filter(
-            function(value) {
-                return value !== "All";
-            }
-        );
-
-        const index =
-            selection.indexOf(clickedValue);
-
-        if (index >= 0) {
-
-            selection.splice(
-                index,
-                1
-            );
-
-        }
-        else {
-
-            selection.push(
-                clickedValue
-            );
-
-        }
-
-        /*
-         * For non-result groups, at least one option must remain.
-         * If all individual options are selected, collapse the
-         * visual state back to ALL.
-         */
-        if (
-            !allowNone &&
-            selection.length === 0
-        ) {
-
-            selection = ["All"];
-
-        }
-
-        if (
-            selection.length ===
-            allValues.length
-        ) {
-
-            selection = ["All"];
-
-        }
-
-    }
-
-    setActiveFilterValues(
-        selector,
-        selection
-    );
-
-    return selection;
-
-}
-
-/* =========================================================
-   WORK TYPE — multi-select, minimum one functionally active
-   ========================================================= */
+/* WORK TYPE */
 
 document
     .querySelectorAll(
@@ -3404,17 +3053,12 @@ document
                 function() {
 
                     selectedWorkType =
-                        updateMultiFilter(
-                            ".work-type-filter",
-                            selectedWorkType,
-                            button.dataset.filter,
-                            [
-                                "Remote",
-                                "Hybrid",
-                                "On-site"
-                            ],
-                            false
-                        );
+                        button.dataset.filter;
+
+                    setActiveFilter(
+                        ".work-type-filter",
+                        button
+                    );
 
                     renderJobs();
 
@@ -3424,9 +3068,7 @@ document
         }
     );
 
-/* =========================================================
-   RESULT — multi-select, default empty, and may remain empty
-   ========================================================= */
+/* RESULT */
 
 document
     .querySelectorAll(
@@ -3440,17 +3082,12 @@ document
                 function() {
 
                     selectedResult =
-                        updateMultiFilter(
-                            ".result-filter",
-                            selectedResult,
-                            button.dataset.filter,
-                            [
-                                "Interview",
-                                "Rejected",
-                                "I Rejected"
-                            ],
-                            true
-                        );
+                        button.dataset.filter;
+
+                    setActiveFilter(
+                        ".result-filter",
+                        button
+                    );
 
                     renderJobs();
 
@@ -3460,32 +3097,7 @@ document
         }
     );
 
-/* =========================================================
-   APPLIED STATUS — multi-select
-
-   ALL is available, but the default is:
-   Pending + Interview + Rejected.
-   ========================================================= */
-
-/* The existing HTML has an "Applied" button in this position.
-   Re-purpose it as "Pending" without changing index.html. */
-const appliedPendingButton =
-    document.querySelector(
-        '.applied-status-filter[data-filter="Applied"]'
-    );
-
-if (appliedPendingButton) {
-
-    appliedPendingButton.dataset.filter = "Pending";
-    appliedPendingButton.textContent = "Pending";
-
-}
-
-/* Set the requested default visual state. */
-setActiveFilterValues(
-    ".applied-status-filter",
-    selectedAppliedStatus
-);
+/* APPLIED STATUS */
 
 document
     .querySelectorAll(
@@ -3498,19 +3110,79 @@ document
                 "click",
                 function() {
 
-                    selectedAppliedStatus =
-                        updateMultiFilter(
-                            ".applied-status-filter",
-                            selectedAppliedStatus,
-                            button.dataset.filter,
-                            [
-                                "Pending",
-                                "Interview",
-                                "Rejected",
-                                "I Rejected"
-                            ],
-                            false
-                        );
+                    const value =
+                        button.dataset.filter;
+
+                    /*
+                     * ALL is exclusive.
+                     */
+
+                    if (
+                        value ===
+                        "All"
+                    ) {
+
+                        selectedAppliedStatus =
+                            ["All"];
+
+                    }
+
+                    else {
+
+                        /*
+                         * Remove ALL as soon as an
+                         * individual status is chosen.
+                         */
+
+                        selectedAppliedStatus =
+                            selectedAppliedStatus.filter(
+                                function(status) {
+                                    return status !== "All";
+                                }
+                            );
+
+                        if (
+                            selectedAppliedStatus.includes(
+                                value
+                            )
+                        ) {
+
+                            selectedAppliedStatus =
+                                selectedAppliedStatus.filter(
+                                    function(status) {
+                                        return status !== value;
+                                    }
+                                );
+
+                        }
+
+                        else {
+
+                            selectedAppliedStatus.push(
+                                value
+                            );
+
+                        }
+
+                        /*
+                         * If the user turns every
+                         * individual filter off,
+                         * return to ALL.
+                         */
+
+                        if (
+                            selectedAppliedStatus.length ===
+                            0
+                        ) {
+
+                            selectedAppliedStatus =
+                                ["All"];
+
+                        }
+
+                    }
+
+                    updateAppliedStatusButtons();
 
                     renderApplied();
 
@@ -3520,9 +3192,33 @@ document
         }
     );
 
-/* =========================================================
-   APPLIED WORK — multi-select, minimum one
-   ========================================================= */
+function updateAppliedStatusButtons() {
+
+    document
+        .querySelectorAll(
+            ".applied-status-filter"
+        )
+        .forEach(
+            function(button) {
+
+                const value =
+                    button.dataset.filter;
+
+                button.classList.toggle(
+                    "active",
+                    selectedAppliedStatus.includes(
+                        value
+                    )
+                );
+
+            }
+        );
+
+}
+
+updateAppliedStatusButtons();
+
+/* APPLIED WORK */
 
 document
     .querySelectorAll(
@@ -3536,17 +3232,12 @@ document
                 function() {
 
                     selectedAppliedWork =
-                        updateMultiFilter(
-                            ".applied-work-filter",
-                            selectedAppliedWork,
-                            button.dataset.filter,
-                            [
-                                "Remote",
-                                "Hybrid",
-                                "On-site"
-                            ],
-                            false
-                        );
+                        button.dataset.filter;
+
+                    setActiveFilter(
+                        ".applied-work-filter",
+                        button
+                    );
 
                     renderApplied();
 
@@ -3556,9 +3247,7 @@ document
         }
     );
 
-/* =========================================================
-   PROGRESS STATUS — multi-select, minimum one
-   ========================================================= */
+/* PROGRESS STATUS */
 
 document
     .querySelectorAll(
@@ -3572,18 +3261,12 @@ document
                 function() {
 
                     selectedProgressStatus =
-                        updateMultiFilter(
-                            ".progress-status-filter",
-                            selectedProgressStatus,
-                            button.dataset.filter,
-                            [
-                                "Applied",
-                                "Interview",
-                                "Rejected",
-                                "I Rejected"
-                            ],
-                            false
-                        );
+                        button.dataset.filter;
+
+                    setActiveFilter(
+                        ".progress-status-filter",
+                        button
+                    );
 
                     renderProgress();
 
@@ -3593,9 +3276,7 @@ document
         }
     );
 
-/* =========================================================
-   PROGRESS WORK — multi-select, minimum one
-   ========================================================= */
+/* PROGRESS WORK */
 
 document
     .querySelectorAll(
@@ -3609,17 +3290,12 @@ document
                 function() {
 
                     selectedProgressWork =
-                        updateMultiFilter(
-                            ".progress-work-filter",
-                            selectedProgressWork,
-                            button.dataset.filter,
-                            [
-                                "Remote",
-                                "Hybrid",
-                                "On-site"
-                            ],
-                            false
-                        );
+                        button.dataset.filter;
+
+                    setActiveFilter(
+                        ".progress-work-filter",
+                        button
+                    );
 
                     renderProgress();
 
@@ -3630,35 +3306,7 @@ document
     );
 
 /* =========================================================
-   FILTER VISUAL STATE
-   ========================================================= */
-
-function setActiveFilterValues(
-    selector,
-    selectedValues
-) {
-
-    document
-        .querySelectorAll(
-            selector
-        )
-        .forEach(
-            function(button) {
-
-                button.classList.toggle(
-                    "active",
-                    selectedValues.includes(
-                        button.dataset.filter
-                    )
-                );
-
-            }
-        );
-
-}
-
-/* =========================================================
-   LEGACY SINGLE-FILTER HELPER
+   ACTIVE FILTER
    ========================================================= */
 
 function setActiveFilter(
@@ -3675,7 +3323,8 @@ function setActiveFilter(
 
                 button.classList.toggle(
                     "active",
-                    button === activeButton
+                    button ===
+                    activeButton
                 );
 
             }
@@ -3764,102 +3413,45 @@ function cssEscape(
    INITIAL STATE
    ========================================================= */
 
-/* =========================================================
-   RESTORE SAME-TAB SESSION ON REFRESH
-   ========================================================= */
-
-async function restoreSession() {
-
-    if (!dashboard || !loginScreen) {
-        return;
-    }
+if (
+    dashboard &&
+    loginScreen
+) {
 
     dashboard.classList.add(
         "hidden"
     );
 
-    const savedUser =
+    const savedToken =
         sessionStorage.getItem(
-            SESSION_KEY
+            "edithWebToken"
         );
 
-    const savedToken =
-        getAuthToken();
+    const savedDisplayName =
+        sessionStorage.getItem(
+            "edithDisplayName"
+        );
 
     if (
-        !savedUser ||
-        !savedToken
+        savedToken &&
+        savedDisplayName
     ) {
 
-        clearSession();
+        loggedInName.textContent =
+            savedDisplayName;
 
-        loginScreen.classList.remove(
+        loginScreen.classList.add(
             "hidden"
         );
 
-        return;
-
-    }
-
-    const savedPage =
-        sessionStorage.getItem(
-            PAGE_KEY
+        dashboard.classList.remove(
+            "hidden"
         );
 
-    if (savedPage) {
-        currentPage = savedPage;
+        renderTodayHeader();
+
+        loadJobs();
+
     }
 
-    loggedInName.textContent =
-        savedUser;
-
-    updateHeaderGreeting();
-
-    loginScreen.classList.add(
-        "hidden"
-    );
-
-    dashboard.classList.remove(
-        "hidden"
-    );
-
-    navButtons.forEach(
-        function(button) {
-
-            button.classList.toggle(
-                "active",
-                button.dataset.page ===
-                currentPage
-            );
-
-        }
-    );
-
-    pages.forEach(
-        function(page) {
-
-            page.classList.toggle(
-                "active-page",
-                page.id ===
-                currentPage + "Page"
-            );
-
-        }
-    );
-
-    await loadJobs();
-
 }
-
-restoreSession();
-
-
-/* Keep the displayed calendar date current while the page remains open. */
-updateHeaderGreeting();
-setInterval(updateHeaderGreeting, 60000);
-
-
-/* Keep greeting/date current while the page remains open. */
-/* updateHeaderGreeting handles the live greeting/date refresh. */
-
-updateHeaderGreeting();
