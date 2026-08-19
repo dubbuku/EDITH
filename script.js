@@ -253,6 +253,9 @@ const loginSubmitButton =
         )
         : null;
 
+const loginLoader =
+    document.getElementById("loginLoader");
+
 function updateLoginGlow() {
 
     if (!loginSubmitButton) {
@@ -274,6 +277,54 @@ function updateLoginGlow() {
         username.length > 0 ||
         password.length > 0
     );
+
+}
+
+function showLoginLoader() {
+
+    if (loginLoader) {
+        loginLoader.classList.remove("hidden");
+        loginLoader.setAttribute(
+            "aria-hidden",
+            "false"
+        );
+    }
+
+    if (loginSubmitButton) {
+        loginSubmitButton.disabled = true;
+    }
+
+    if (usernameInput) {
+        usernameInput.disabled = true;
+    }
+
+    if (passwordInput) {
+        passwordInput.disabled = true;
+    }
+
+}
+
+function hideLoginLoader() {
+
+    if (loginLoader) {
+        loginLoader.classList.add("hidden");
+        loginLoader.setAttribute(
+            "aria-hidden",
+            "true"
+        );
+    }
+
+    if (loginSubmitButton) {
+        loginSubmitButton.disabled = false;
+    }
+
+    if (usernameInput) {
+        usernameInput.disabled = false;
+    }
+
+    if (passwordInput) {
+        passwordInput.disabled = false;
+    }
 
 }
 
@@ -1008,6 +1059,8 @@ loginForm.addEventListener(
         loginError.textContent =
             "";
 
+        showLoginLoader();
+
         try {
 
             const auth =
@@ -1029,14 +1082,6 @@ loginForm.addEventListener(
             );
 
             updateHeaderGreeting();
-
-            loginScreen.classList.add(
-                "hidden"
-            );
-
-            dashboard.classList.remove(
-                "hidden"
-            );
 
             const savedPage =
                 sessionStorage.getItem(
@@ -1078,9 +1123,21 @@ loginForm.addEventListener(
 
             await loadJobs();
 
+            hideLoginLoader();
+
+            loginScreen.classList.add(
+                "hidden"
+            );
+
+            dashboard.classList.remove(
+                "hidden"
+            );
+
         }
 
         catch (error) {
+
+            hideLoginLoader();
 
             clearAuthToken();
 
@@ -1576,11 +1633,14 @@ function renderJobs() {
                 ) {
 
                     /*
-                     * Application and Result are independent filters.
-                     * A user-rejected job can still be "To Apply"
-                     * because Applied remains FALSE.
+                     * User-rejected and company-rejected jobs are not
+                     * actionable opportunities, even when Applied is FALSE.
                      */
-                    if (job.applied) {
+                    if (
+                        job.applied ||
+                        job.userRejected ||
+                        job.status === "Rejected"
+                    ) {
 
                         return false;
 
