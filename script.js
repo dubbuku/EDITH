@@ -220,7 +220,7 @@ let selectedApplication = "All";
 
 let selectedWorkType = ["All"];
 
-let selectedResult = [];
+let selectedResult = ["All"];
 
 let selectedAppliedStatus = ["All"];
 
@@ -1576,11 +1576,13 @@ function renderJobs() {
                 ) {
 
                     /*
-                     * Application and Result are independent filters.
-                     * A user-rejected job can still be "To Apply"
-                     * because Applied remains FALSE.
+                     * To Apply means the job has not been applied to
+                     * and has not been rejected by the user.
                      */
-                    if (job.applied) {
+                    if (
+                        job.applied ||
+                        job.userRejected
+                    ) {
 
                         return false;
 
@@ -1621,9 +1623,10 @@ function renderJobs() {
 
                 /*
                  * RESULT — multi-select.
-                 * Result has no active filter by default.
-                 * It may also have no selections at any time,
-                 * meaning no result filtering.
+                 * ALL is the default shortcut for all results.
+                 * If all individual result filters are turned off,
+                 * selectedResult becomes empty and no result filtering
+                 * is applied.
                  */
 
                 if (
@@ -3371,7 +3374,7 @@ document
     );
 
 /* =========================================================
-   RESULT — multi-select, default empty, and may remain empty
+   RESULT — multi-select, default ALL, and may become empty
    ========================================================= */
 
 document
@@ -3560,6 +3563,9 @@ function setActiveFilterValues(
     selectedValues
 ) {
 
+    const allSelected =
+        selectedValues.includes("All");
+
     document
         .querySelectorAll(
             selector
@@ -3567,17 +3573,30 @@ function setActiveFilterValues(
         .forEach(
             function(button) {
 
+                const value =
+                    button.dataset.filter;
+
                 button.classList.toggle(
                     "active",
-                    selectedValues.includes(
-                        button.dataset.filter
-                    )
+                    allSelected ||
+                    selectedValues.includes(value)
                 );
 
             }
         );
 
 }
+
+/* Initial visual state: ALL means every option is ON. */
+setActiveFilterValues(
+    ".work-type-filter",
+    selectedWorkType
+);
+
+setActiveFilterValues(
+    ".result-filter",
+    selectedResult
+);
 
 /* =========================================================
    LEGACY SINGLE-FILTER HELPER
