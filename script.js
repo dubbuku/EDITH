@@ -218,9 +218,9 @@ let applicationPromptShown = false;
 
 let selectedApplication = "All";
 
-let selectedWorkType = ["All"];
+let selectedWorkType = ["Remote", "Hybrid", "On-site"];
 
-let selectedResult = ["All"];
+let selectedResult = ["Interview", "Rejected", "I Rejected"];
 
 let selectedAppliedStatus = ["All"];
 
@@ -1576,13 +1576,11 @@ function renderJobs() {
                 ) {
 
                     /*
-                     * To Apply means the job has not been applied to
-                     * and has not been rejected by the user.
+                     * Application and Result are independent filters.
+                     * A user-rejected job can still be "To Apply"
+                     * because Applied remains FALSE.
                      */
-                    if (
-                        job.applied ||
-                        job.userRejected
-                    ) {
+                    if (job.applied) {
 
                         return false;
 
@@ -1623,10 +1621,9 @@ function renderJobs() {
 
                 /*
                  * RESULT — multi-select.
-                 * ALL is the default shortcut for all results.
-                 * If all individual result filters are turned off,
-                 * selectedResult becomes empty and no result filtering
-                 * is applied.
+                 * Result defaults to ALL. Individual result filters may be
+                 * switched off independently, including all three,
+                 * in which case no result filtering is applied.
                  */
 
                 if (
@@ -3266,18 +3263,23 @@ function updateMultiFilter(
     let selection =
         Array.isArray(currentSelection)
             ? [...currentSelection]
-            : ["All"];
+            : [...allValues];
 
-    /* ALL means everything and is visually exclusive. */
+    /*
+     * ALL is a shortcut for selecting every individual option.
+     * It is not mutually exclusive with the individual buttons
+     * visually: when every individual option is selected, ALL is
+     * shown as active as well.
+     */
     if (clickedValue === "All") {
 
-        selection = ["All"];
+        selection = [...allValues];
 
     }
 
     else {
 
-        /* First individual selection turns ALL off. */
+        /* Remove the derived ALL state before toggling an individual. */
         selection = selection.filter(
             function(value) {
                 return value !== "All";
@@ -3289,10 +3291,18 @@ function updateMultiFilter(
 
         if (index >= 0) {
 
-            selection.splice(
-                index,
-                1
-            );
+            /* Result may have zero selections; other groups may not. */
+            if (
+                allowNone ||
+                selection.length > 1
+            ) {
+
+                selection.splice(
+                    index,
+                    1
+                );
+
+            }
 
         }
         else {
@@ -3303,28 +3313,34 @@ function updateMultiFilter(
 
         }
 
-        /*
-         * For non-result groups, at least one option must remain.
-         * If all individual options are selected, collapse the
-         * visual state back to ALL.
-         */
-        if (
-            !allowNone &&
-            selection.length === 0
-        ) {
+    }
 
-            selection = ["All"];
+    /*
+     * For Work Type, at least one individual option must remain.
+     * Result is the exception and is allowed to have zero.
+     */
+    if (
+        !allowNone &&
+        selection.length === 0
+    ) {
 
-        }
+        selection = [allValues[0]];
 
-        if (
-            selection.length ===
-            allValues.length
-        ) {
+    }
 
-            selection = ["All"];
+    /*
+     * Keep ALL as a derived state when every individual option is ON.
+     * This lets the existing render/filter logic treat ALL as the
+     * no-restriction state while the UI can show ALL + every option ON.
+     */
+    if (
+        selection.length === allValues.length &&
+        allValues.every(function(value) {
+            return selection.includes(value);
+        })
+    ) {
 
-        }
+        selection = ["All"].concat(allValues);
 
     }
 
@@ -3563,40 +3579,41 @@ function setActiveFilterValues(
     selectedValues
 ) {
 
-    const allSelected =
-        selectedValues.includes("All");
+    const buttons =
+        document.querySelectorAll(selector);
 
-    document
-        .querySelectorAll(
-            selector
-        )
-        .forEach(
-            function(button) {
+    const individualValues =
+        Array.from(buttons)
+            .map(function(button) {
+                return button.dataset.filter;
+            })
+            .filter(function(value) {
+                return value !== "All";
+            });
 
-                const value =
-                    button.dataset.filter;
+    const allIndividualsSelected =
+        individualValues.length > 0 &&
+        individualValues.every(function(value) {
+            return selectedValues.includes(value);
+        });
 
-                button.classList.toggle(
-                    "active",
-                    allSelected ||
-                    selectedValues.includes(value)
-                );
+    buttons.forEach(
+        function(button) {
 
-            }
-        );
+            const value =
+                button.dataset.filter;
+
+            button.classList.toggle(
+                "active",
+                value === "All"
+                    ? allIndividualsSelected
+                    : selectedValues.includes(value)
+            );
+
+        }
+    );
 
 }
-
-/* Initial visual state: ALL means every option is ON. */
-setActiveFilterValues(
-    ".work-type-filter",
-    selectedWorkType
-);
-
-setActiveFilterValues(
-    ".result-filter",
-    selectedResult
-);
 
 /* =========================================================
    LEGACY SINGLE-FILTER HELPER
